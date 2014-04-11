@@ -3,7 +3,7 @@
 # but will do just fine until then
 
 CXXFLAGS := -std=c++11 -Wall -Wextra -Weffc++ -pedantic
-LIBFLAGS := -ljsoncpp
+LIBFLAGS :=
 
 OBJS := $(patsubst %.cpp,%.o, $(wildcard src/*.cpp))
 TESTOBJS := $(patsubst %.cpp,%.o, $(wildcard tests/*.cpp))
