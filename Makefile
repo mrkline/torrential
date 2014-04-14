@@ -8,7 +8,7 @@ LIBFLAGS :=
 OBJS := $(filter-out src/main.o, $(patsubst %.cpp,%.o, $(wildcard src/*.cpp)))
 TESTOBJS := $(patsubst %.cpp,%.o, $(wildcard tests/*.cpp))
 
-unit_tests: CXXFLAGS += -I. -Icommon -Itests -g
+unit_tests: CXXFLAGS += -I. -Isrc -Itests -g
 unit_tests: $(OBJS) $(TESTOBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) $(TESTOBJS) $(LIBFLAGS) -o unit_tests
 

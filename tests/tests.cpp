@@ -1,8 +1,13 @@
 #include <cstdio>
 
+#include "Test.hpp"
+#include "PoolTests.hpp"
+
 int main()
 {
-	printf("Running unit tests...\n");
+	using namespace Testing;
 
+	printf("Running unit tests...\n");
+	runPoolTests();
 	return 0;
 }

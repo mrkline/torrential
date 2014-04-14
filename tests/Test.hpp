@@ -18,7 +18,7 @@ inline void testThrown(E expr)
 	}
 
 	// We didn't catch it
-	assert(false);
+	assert(false)();
 }
 
 /// Just prints a "starting test unit Foo"
