@@ -6,6 +6,8 @@
 #include "Pool.hpp"
 
 using namespace std;
+using namespace Exceptions;
+using namespace Testing;
 
 namespace {
 
@@ -42,7 +44,8 @@ void construction()
 	}
 
 	// Check that we get nullptr back when we're out of space
-	assert(aPool.construct() == nullptr);
+	assertThrown<PoolFullException>([&] { aPool.construct(); });
+	assert(aPool.tryConstruct() == nullptr);
 }
 
 void release()

@@ -10,7 +10,7 @@
 namespace Testing {
 
 template <typename T, typename E>
-inline void testThrown(E expr)
+inline void assertThrown(E expr)
 {
 	try { expr(); }
 	catch (const T& thrown) {
@@ -18,7 +18,7 @@ inline void testThrown(E expr)
 	}
 
 	// We didn't catch it
-	assert(false)();
+	assert(false);
 }
 
 /// Just prints a "starting test unit Foo"

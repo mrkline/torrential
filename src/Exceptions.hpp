@@ -182,7 +182,6 @@ namespace Exceptions
 		virtual ~IndexOutOfRangeException() noexcept { }
 	};
 
-
 	/// Thrown if an argument to a method was invalid
 	class ConcurrencyException : public Exception {
 
@@ -204,8 +203,8 @@ namespace Exceptions
 
 	public:
 		InvalidOperationException(const std::string& exceptionMessage,
-		                          const char* file, int line)
-				: Exception(exceptionMessage, file, line, "invalid operation")
+		                          const char* file, int line, const char* type = "invalid operation")
+				: Exception(exceptionMessage, file, line, type)
 		{ }
 
 		InvalidOperationException(const InvalidOperationException&) = default;

@@ -4,6 +4,25 @@
 #include <new>
 #include <utility>
 
+#include "Exceptions.hpp"
+
+namespace Exceptions {
+
+/// Thrown if the user tries to construct an item in a full pool
+class PoolFullException final : public InvalidOperationException {
+public:
+	PoolFullException(const std::string& exceptionMessage,
+	                  const char* file, int line) :
+		InvalidOperationException(exceptionMessage, file, line, "pool full")
+	{ }
+
+	PoolFullException(const PoolFullException&) = default;
+
+	PoolFullException& operator=(PoolFullException&) = delete;
+};
+
+} // end namespace Exceptions
+
 template <typename T>
 class Pool {
 
@@ -35,9 +54,20 @@ public:
 
 	size_t getSize() const { return size; }
 
-	/// Allocates and returns a single node from the pool, or null if it cannot
+	/// Allocates and returns a single node from the pool, or throws PoolFullException otherwise
 	template <typename... Args>
 	T* construct(Args&&... args)
+	{
+		T* ret = tryConstruct(std::forward<Args>(args)...);
+		if (ret == nullptr)
+			THROW(Exceptions::PoolFullException, "The pool is full.");
+
+		return ret;
+	}
+
+	/// Allocates and returns a single node from the pool, or null if the pool is full
+	template <typename... Args>
+	T* tryConstruct(Args&&... args)
 	{
 		if (firstFree == nullptr)
 			return nullptr;
