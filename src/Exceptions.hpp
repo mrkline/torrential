@@ -1,30 +1,36 @@
 #ifndef __MK_EXCEPTIONS_HPP__
 #define __MK_EXCEPTIONS_HPP__
 
-#ifdef _WIN32
-#define noexcept
-#endif
-
 #include <exception>
 #include <string>
 
+/**
+ * \brief Provides a hierarchy of custom exception types
+ *
+ * Unfortunately, the standard set of exceptions is underwhelming.
+ * It does not provide enough exceptions to indicate many common but specific problems,
+ * nor does it provide file name and line number for debugging.
+ * This hierarchy attempts to alleviate those two concerns
+ * Combined with the THROW and ENFORCE macros,
+ * this provides a much nicer debugging experience.
+ */
 namespace Exceptions
 {
 
 	/**
-	\brief A base Exception class
-
-	Most exception types are lovingly borrowed from the .NET framework.
-	*/
+	 * \brief A base Exception class
+	 *
+	 * Most exception types are lovingly inspired by the .NET framework.
+	 */
 	class Exception : public std::exception {
 
 	public:
 		/**
-		\brief Initializes an exception with a message and other optional data
-		\param exceptionMessage The message to contain within the exception.
-		\param file The file from which the exception was thrown
-		\param line The line from which the exception was thrown
-		*/
+		 * \brief Initializes an exception with a message and other optional data
+		 * \param exceptionMessage The message to contain within the exception.
+		 * \param file The file from which the exception was thrown
+		 * \param line The line from which the exception was thrown
+		 */
 		Exception(const std::string& exceptionMessage,
 		          const char* file, int line) :
 			message(exceptionMessage),
@@ -59,10 +65,10 @@ namespace Exceptions
 	};
 
 	/**
-	\brief Thrown if a method or function is not implemented.
-
-	Mostly for use as a placeholder in stubs during development.
-	*/
+	 * \brief Thrown if a method or function is not implemented.
+	 *
+	 * Mostly for use as a placeholder in stubs during development.
+	 */
 	class NotImplementedException : public Exception {
 
 	public:
@@ -280,7 +286,14 @@ namespace Exceptions
 		virtual ~NetworkException() noexcept { }
 	};
 
-	/// A convenience function that checks a condition and throws a given exception if it is false
+	/**
+	  * \brief A convenience function that checks a condition and throws a given exception if it is false
+	  * \tparam T The exception type to throw if the condition is not met
+	  * \param cond true if the condition was met, otherwise false
+	  * \param message The message to pass to the exception's constructor
+	  * \param file The name of the file where the exception is being thrown
+	  * \param line The line number from which the exception is being thrown.
+	  */
 	template <typename T = Exception>
 	inline void enforce(bool cond, const std::string& message, const char* file, int line)
 	{
@@ -293,11 +306,18 @@ namespace Exceptions
 #ifdef ENFORCE
 #error ENFORCE is already defined. See Exceptions.hpp
 #endif
+/**
+ * \brief A convenience wrapper around Exceptions::enforce that provides the file and line number
+ * \param ex The exception type to throw if the condition is not met
+ * \param cond An expression that evaluates to a boolean condition
+ * \param msg The message to pass the exception
+ */
 #define ENFORCE(ex, cond, msg) Exceptions::enforce<ex>(cond, msg, __FILE__, __LINE__)
 
 #ifdef THROW
 #error THROW is already defined. See Exceptions.hpp
 #endif
+/// A convenience wrapper that provides the file and line number to the exception's constructor
 #define THROW(ex, msg) throw ex(msg, __FILE__, __LINE__)
 
 #endif
