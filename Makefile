@@ -5,12 +5,11 @@
 CXXFLAGS := -std=c++11 -Wall -Wextra -Weffc++ -pedantic
 LIBFLAGS :=
 
-OBJS := $(patsubst %.cpp,%.o, $(wildcard src/*.cpp))
+OBJS := $(filter-out src/main.o, $(patsubst %.cpp,%.o, $(wildcard src/*.cpp)))
 TESTOBJS := $(patsubst %.cpp,%.o, $(wildcard tests/*.cpp))
 
 unit_tests: CXXFLAGS += -I. -Icommon -Itests -g
 unit_tests: $(OBJS) $(TESTOBJS)
-	echo $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) $(TESTOBJS) $(LIBFLAGS) -o unit_tests
 
 # debug: CXXFLAGS += -g
@@ -18,8 +17,8 @@ unit_tests: $(OBJS) $(TESTOBJS)
 # release: CXXFLAGS+= -O2 -DNDEBUG
 
 # link
-torrential: $(OBJS) main.o
-	$(CXX) $(CXXFLAGS) $(OBJS)  $(LIBFLAGS) main.o -o torrential
+torrential: $(OBJS) src/main.o
+	$(CXX) $(CXXFLAGS) $(OBJS)  $(LIBFLAGS) src/main.o -o torrential
 
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
@@ -49,6 +48,6 @@ torrential: $(OBJS) main.o
 
 # remove compilation products
 clean:
-	rm -f tests/*.o common/*.o *.o *.gch *.d
+	rm -f tests/*.o common/*.o *.o *.gch *.d unit_tests* torrential*
 
 .PHONY: clean debug release
