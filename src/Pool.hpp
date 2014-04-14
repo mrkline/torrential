@@ -21,11 +21,10 @@ public:
 		// Initialize all our slots
 		for (size_t i = 0; i < poolSize; ++i) {
 			Slot& currentSlot = buff[i];
-			currentSlot.inUse = false;
-			currentSlot.u.next = &buff[i + 1];
+			currentSlot.next = &buff[i + 1];
 		}
 		// The last next pointer should point to null
-		buff[poolSize - 1].u.next = nullptr;
+		buff[poolSize - 1].next = nullptr;
 		firstFree = &buff[0];
 	}
 
@@ -45,17 +44,39 @@ public:
 
 		// Go to our first free slot
 		Slot* toUse = firstFree;
-		Slot* nextFree = firstFree->u.next;
+		Slot* nextFree = firstFree->next;
 
-		// Mark our slot as in-use
-		toUse->inUse = true;
 		// Acctually instantiate the object in the chunk of memory we have for it
-		::new (&toUse->u.data) T(std::forward<Args>(args)...);
+		::new (&toUse->data) T(std::forward<Args>(args)...);
 
 		// Update the first free pointer now that this slot is in use
 		firstFree = nextFree;
 
-		return &toUse->u.data;
+		return &toUse->data;
+	}
+
+	void release(T* toRelease)
+	{
+		// TODO: Validation: Make sure this is a valid pointer
+
+
+		toRelease->~T(); // Call its destructor
+
+		Slot* releaseSlot = reinterpret_cast<Slot*>(toRelease);
+
+		if (releaseSlot < firstFree) {
+			releaseSlot->next = firstFree;
+			firstFree = releaseSlot;
+		}
+		else {
+			// Thanks, Linus (http://stackoverflow.com/q/12914917/713961)
+			Slot** next = &firstFree->next;
+			while (*next != nullptr && *next < releaseSlot) {
+				next = &(*next)->next;
+			}
+			releaseSlot->next = *next;
+			(*next)->next = releaseSlot;
+		}
 	}
 
 	// No copy or assign
@@ -65,12 +86,12 @@ public:
 
 private:
 
-	struct Slot {
-		bool inUse;
-		union {
-			T data;
-			Slot* next;
-		} u;
+	 /// A slot in our pool.
+	 /// We use this union so that we can hold a pointer to the next free slot
+	 ///when the slot is not in use
+	union Slot {
+		T data; ///< The allocated data in the slot, or alternatively...
+		Slot* next; ///< ...A pointer to the next free slot
 	};
 
 	Slot* buff;
