@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exception>
 #include <cstdlib>
 #include <new>
 #include <utility>
@@ -31,7 +32,7 @@ public:
 	Pool(size_t poolSize) :
 		buff(nullptr),
 		firstFree(nullptr),
-		size(poolSize)
+		numSlots(poolSize)
 	{
 		buff = static_cast<Slot*>(malloc(poolSize * sizeof(Slot)));
 		if (buff == nullptr)
@@ -49,10 +50,19 @@ public:
 
 	~Pool()
 	{
+		// If everything isn't free, we're in undefined territory.
+		// Give up!
+		if (firstFree != buff || size() != 0) {
+			fprintf(stderr, "A pool was destroyed before its elements were freed.\n");
+			std::terminate();
+		}
+
 		free(buff);
 	}
 
-	size_t getSize() const { return size; }
+	size_t size() const { return numSlots - getFreeCount(); }
+
+	size_t max_size() const { return numSlots; }
 
 	/// Allocates and returns a single node from the pool, or throws PoolFullException otherwise
 	template <typename... Args>
@@ -87,25 +97,37 @@ public:
 
 	void release(T* toRelease)
 	{
-		// TODO: Validation: Make sure this is a valid pointer
+		Slot* releaseSlot = reinterpret_cast<Slot*>(toRelease);
 
+		// Validation: Make sure this is a valid pointer
+		if (!isValidPointer(releaseSlot))
+			throw std::invalid_argument("The provided pointer is not valid");
 
 		toRelease->~T(); // Call its destructor
 
-		Slot* releaseSlot = reinterpret_cast<Slot*>(toRelease);
-
-		if (releaseSlot < firstFree) {
+		// This will be our first free node
+		if (firstFree == nullptr) {
+			releaseSlot->next = nullptr;
+			firstFree = releaseSlot;
+		}
+		// The slot comes before our previously first free slot
+		else if (releaseSlot < firstFree) {
 			releaseSlot->next = firstFree;
 			firstFree = releaseSlot;
 		}
+		// Walk the free list, inserting this node in the correct place
 		else {
 			// Thanks, Linus (http://stackoverflow.com/q/12914917/713961)
-			Slot** next = &firstFree->next;
-			while (*next != nullptr && *next < releaseSlot) {
-				next = &(*next)->next;
+			Slot** curr = &firstFree;
+			while ((*curr)->next != nullptr && (*curr)->next < releaseSlot) {
+				curr = &(*curr)->next;
 			}
-			releaseSlot->next = *next;
-			(*next)->next = releaseSlot;
+			if ((*curr)->next == releaseSlot) {
+				// Duplicate release
+				return;
+			}
+			releaseSlot->next = (*curr)->next;
+			(*curr)->next = releaseSlot;
 		}
 	}
 
@@ -124,7 +146,53 @@ private:
 		Slot* next; ///< ...A pointer to the next free slot
 	};
 
+	/**
+	 * \brief Gets the number of contiguous slots start
+	 * \param s The first free slot in a possible group of contiguous slots
+	 * \returns The number of contiguous slots, starting at the given slot,
+	 *          and the next free pointer after this current slot
+	 *
+	 * This function assumes that the pointer it is passed is free.
+	 */
+	std::pair<int, Slot*> getContiguousCount(Slot* s) const
+	{
+		assert(isValidPointer(s));
+		int contig = 1;
+		while (s->next == s + 1) {
+			++contig;
+			++s;
+		}
+
+		return std::pair<int, Slot*>(contig, s->next);
+	}
+
+	/// Gets the number of free slots
+	int getFreeCount() const
+	{
+		// Just walk the free list until we hit null
+		int ret = 0;
+		for (Slot* curr = firstFree; curr != nullptr; curr = curr->next)
+			++ret;
+
+		return ret;
+	}
+
+	/// \brief Checks if a pointer is within the range of the buffer and is aligned.
+	/// \warning This does not check if the pointer is free or used. That would take too much time.
+	bool isValidPointer(Slot* s) const
+	{
+		if (s < buff || s >= buff + numSlots)
+			return false; // The pointer is not inside our buffer
+
+		const uintptr_t distance = (char*)s - (char*)buff;
+
+		if (distance % sizeof(Slot) != 0)
+			return false; // The pointer is not aligned
+
+		return true;
+	}
+
 	Slot* buff;
 	Slot* firstFree;
-	size_t size;
+	size_t numSlots;
 };

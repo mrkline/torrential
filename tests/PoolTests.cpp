@@ -30,10 +30,13 @@ void construction()
 {
 	Pool<Payload> aPool(5);
 	vector<Payload*> pointers;
+
+	assert(aPool.size() == 0);
 	
 	// Allocate a bunch of objects
-	for (size_t i = 0; i < aPool.getSize(); ++i) {
+	for (size_t i = 0; i < aPool.max_size(); ++i) {
 		pointers.emplace_back(aPool.construct(i, 42 + i));
+		assert(aPool.size() == i + 1);
 	}
 
 	// Check that they were constructed as we expect
@@ -46,6 +49,9 @@ void construction()
 	// Check that we get nullptr back when we're out of space
 	assertThrown<PoolFullException>([&] { aPool.construct(); });
 	assert(aPool.tryConstruct() == nullptr);
+
+	for (size_t i = 0; i < pointers.size(); ++i)
+		aPool.release(pointers[i]);
 }
 
 void release()
@@ -54,7 +60,7 @@ void release()
 	vector<Payload*> pointers;
 	
 	// Allocate a bunch of objects
-	for (size_t i = 0; i < aPool.getSize(); ++i) {
+	for (size_t i = 0; i < aPool.max_size(); ++i) {
 		pointers.emplace_back(aPool.construct(i, 42 + i));
 	}
 
@@ -65,8 +71,21 @@ void release()
 		assert(p.b == 42 + (int)i);
 	}
 
-	// Check that we get nullptr back when we're out of space
+	// Release them
+	assert(aPool.size() == 5);
 	aPool.release(pointers[0]);
+	assert(aPool.size() == 4);
+	aPool.release(pointers[4]);
+	assert(aPool.size() == 3);
+	aPool.release(pointers[1]);
+	assert(aPool.size() == 2);
+	aPool.release(pointers[3]);
+	assert(aPool.size() == 1);
+	aPool.release(pointers[2]);
+	assert(aPool.size() == 0);
+
+	// Test that we handle a duplicate release okay.
+	aPool.release(pointers[3]);
 }
 
 } // end namespace anonymous
@@ -76,4 +95,5 @@ void Testing::runPoolTests()
 	beginUnit("Pool");
 	test("Instantiation", &instantiation);
 	test("Construction", &construction);
+	test("Release", &release);
 }
