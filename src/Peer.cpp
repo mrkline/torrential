@@ -1,7 +1,7 @@
 // Painstakingly written by Justin Krosschell
 // ECE 537 bittorrent simulator
 
-#include "peer.hpp"
+#include "Peer.hpp"
 
 // Connection sets the IP address of the connection object
 Connection::Connection (int IP) :
