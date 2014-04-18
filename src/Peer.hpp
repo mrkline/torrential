@@ -1,6 +1,8 @@
 // Painstakingly written by Justin Krosschell
 // ECE 537 bittorrent simulator
 
+#pragma once
+
 #include <cstdio>
 #include <vector>
 
