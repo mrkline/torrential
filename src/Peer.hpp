@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <cstdio>
 #include <vector>
 
 class Connection {
