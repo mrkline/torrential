@@ -4,8 +4,7 @@
 #include <cstdlib>
 #include <new>
 #include <utility>
-
-#include "Exceptions.hpp"
+#include <queue>
 
 namespace Exceptions {
 
@@ -40,8 +39,7 @@ public:
 
 		// Initialize all our slots
 		for (size_t i = 0; i < poolSize; ++i) {
-			Slot& currentSlot = buff[i];
-			currentSlot.next = &buff[i + 1];
+			buff[i].next = &buff[i + 1];
 		}
 		// The last next pointer should point to null
 		buff[poolSize - 1].next = nullptr;
@@ -60,17 +58,118 @@ public:
 		free(buff);
 	}
 
-	size_t size() const { return numSlots - getFreeCount(); }
+	/// Gets the number of free slots
+	size_t remaining() const
+	{
+		// Just walk the free list until we hit null
+		size_t ret = 0;
+		for (Slot* curr = firstFree; curr != nullptr; curr = curr->next)
+			++ret;
+
+		return ret;
+	}
+
+	size_t size() const { return numSlots - remaining(); }
 
 	size_t max_size() const { return numSlots; }
+
+	bool empty() const { return remaining() == numSlots; }
+
+	bool full() const { return remaining() == 0; }
+
+	T* allocate(size_t num)
+	{
+		struct Block {
+			Slot* start;
+			size_t size;
+			Slot** previous;
+
+			Block(Slot* st, size_t sz, Slot** prev) : start(st), size(sz), previous(prev) { }
+		};
+
+		auto calcFit = [num](const Block& b1, const Block& b2) {
+			// We shouldn't have blocks that don't fit our needed amount in the queue
+			assert(b1.size >= num);
+			assert(b2.size >= num);
+			const int n = (int)num;
+			const int b1n = (int)b1.size;
+			const int b2n = (int)b2.size;
+			const int a1 = abs(b1n - n);
+			const int a2 = abs(b2n - n);
+			if (a1 == a2)
+				return b1.start > b2.start; // If these are the same fit, prefer the one closer to the start
+			else
+				return  a1 > a2; // Sort by best fit
+			// TODO: Tiebreakers, possibly based on position
+		};
+
+		std::priority_queue<Block, std::vector<Block>, decltype(calcFit)> bestFitter(calcFit);
+
+		// Iterate through our free list, finding contiguous chunks
+		Slot** curr = &firstFree;
+		std::pair<int, Slot**> countInfo = getContiguousCount(*curr);
+		for (; *curr != nullptr; curr = countInfo.second, countInfo = getContiguousCount(*curr)) {
+			// If a chunk can fit our needed size, throw it in the priority queue
+			if (countInfo.first >= num)
+				bestFitter.emplace(*curr, countInfo.first, curr);
+		}
+
+		if (bestFitter.empty())
+			throw std::bad_alloc();
+
+		const auto best = bestFitter.top();
+
+		// Set our previous pointer to the next pointer at the end of this block,
+		// effectively skipping this block
+		*best.previous = best.start[num - 1].next;
+
+		return reinterpret_cast<T*>(best.start); // Return our best fit block
+	}
+
+	void deallocate(T* allocated, size_t n)
+	{
+		Slot* blockStart = reinterpret_cast<Slot*>(allocated);
+
+		// Validation: Make sure this is a valid pointer
+		if (!isValidPointer(blockStart))
+			throw std::invalid_argument("The provided pointer is not valid");
+
+		// This will be our first free node
+		if (firstFree == nullptr) {
+			blockStart[n - 1].next = nullptr;
+			firstFree = blockStart;
+		}
+		// The slot comes before our previously first free slot
+		else if (blockStart < firstFree) {
+			blockStart[n - 1].next = firstFree;
+			firstFree = blockStart;
+		}
+		// Walk the free list, inserting this node in the correct place
+		else {
+			Slot** curr = &firstFree;
+			while ((*curr)->next != nullptr && (*curr)->next < blockStart) {
+				curr = &(*curr)->next;
+			}
+			if ((*curr)->next == blockStart) {
+				throw std::logic_error("Double deallocate detected");
+			}
+
+			blockStart[n - 1].next = (*curr)->next;
+			(*curr)->next = blockStart;
+		}
+
+		// Set up the block's "next" pointers
+		for (size_t i = 0; i < n - 1; ++i)
+			blockStart[i].next = &blockStart[i + 1];
+	}
+
 
 	/// Allocates and returns a single node from the pool, or throws PoolFullException otherwise
 	template <typename... Args>
 	T* construct(Args&&... args)
 	{
-		T* ret = tryConstruct(std::forward<Args>(args)...);
-		if (ret == nullptr)
-			THROW(Exceptions::PoolFullException, "The pool is full.");
+		T* ret = allocate(1);
+		::new (ret) T(std::forward<Args>(args)...);
 
 		return ret;
 	}
@@ -79,56 +178,19 @@ public:
 	template <typename... Args>
 	T* tryConstruct(Args&&... args)
 	{
-		if (firstFree == nullptr)
+		try {
+			return construct(std::forward<Args>(args)...);
+		}
+		catch (const std::bad_alloc&) {
 			return nullptr;
-
-		// Go to our first free slot
-		Slot* toUse = firstFree;
-		Slot* nextFree = firstFree->next;
-
-		// Acctually instantiate the object in the chunk of memory we have for it
-		::new (&toUse->data) T(std::forward<Args>(args)...);
-
-		// Update the first free pointer now that this slot is in use
-		firstFree = nextFree;
-
-		return &toUse->data;
+		}
 	}
 
 	void release(T* toRelease)
 	{
-		Slot* releaseSlot = reinterpret_cast<Slot*>(toRelease);
-
-		// Validation: Make sure this is a valid pointer
-		if (!isValidPointer(releaseSlot))
-			throw std::invalid_argument("The provided pointer is not valid");
+		deallocate(toRelease, 1);
 
 		toRelease->~T(); // Call its destructor
-
-		// This will be our first free node
-		if (firstFree == nullptr) {
-			releaseSlot->next = nullptr;
-			firstFree = releaseSlot;
-		}
-		// The slot comes before our previously first free slot
-		else if (releaseSlot < firstFree) {
-			releaseSlot->next = firstFree;
-			firstFree = releaseSlot;
-		}
-		// Walk the free list, inserting this node in the correct place
-		else {
-			// Thanks, Linus (http://stackoverflow.com/q/12914917/713961)
-			Slot** curr = &firstFree;
-			while ((*curr)->next != nullptr && (*curr)->next < releaseSlot) {
-				curr = &(*curr)->next;
-			}
-			if ((*curr)->next == releaseSlot) {
-				// Duplicate release
-				return;
-			}
-			releaseSlot->next = (*curr)->next;
-			(*curr)->next = releaseSlot;
-		}
 	}
 
 	// No copy or assign
@@ -150,12 +212,16 @@ private:
 	 * \brief Gets the number of contiguous slots start
 	 * \param s The first free slot in a possible group of contiguous slots
 	 * \returns The number of contiguous slots, starting at the given slot,
-	 *          and the next free pointer after this current slot
+	 *          and the next free pointer after this current slot,
+	 *          or 0 and null if null is given as an input
 	 *
 	 * This function assumes that the pointer it is passed is free.
 	 */
-	std::pair<int, Slot*> getContiguousCount(Slot* s) const
+	std::pair<int, Slot**> getContiguousCount(Slot* s) const
 	{
+		if (s == nullptr)
+			return std::pair<int, Slot**>(0, nullptr);
+
 		assert(isValidPointer(s));
 		int contig = 1;
 		while (s->next == s + 1) {
@@ -163,18 +229,7 @@ private:
 			++s;
 		}
 
-		return std::pair<int, Slot*>(contig, s->next);
-	}
-
-	/// Gets the number of free slots
-	int getFreeCount() const
-	{
-		// Just walk the free list until we hit null
-		int ret = 0;
-		for (Slot* curr = firstFree; curr != nullptr; curr = curr->next)
-			++ret;
-
-		return ret;
+		return std::pair<int, Slot**>(contig, &s->next);
 	}
 
 	/// \brief Checks if a pointer is within the range of the buffer and is aligned.

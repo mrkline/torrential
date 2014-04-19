@@ -47,7 +47,7 @@ void construction()
 	}
 
 	// Check that we get nullptr back when we're out of space
-	assertThrown<PoolFullException>([&] { aPool.construct(); });
+	assertThrown<std::bad_alloc>([&] { aPool.construct(); });
 	assert(aPool.tryConstruct() == nullptr);
 
 	for (size_t i = 0; i < pointers.size(); ++i)
@@ -83,9 +83,61 @@ void release()
 	assert(aPool.size() == 1);
 	aPool.release(pointers[2]);
 	assert(aPool.size() == 0);
+}
 
-	// Test that we handle a duplicate release okay.
-	aPool.release(pointers[3]);
+void allocate()
+{
+	Pool<Payload> aPool(10);
+
+	// We have a lot of assertions here,
+	// but hell, these are tests after all.
+
+	Payload* first = aPool.allocate(3);
+	assert(aPool.size() == 3);
+	Payload* second = aPool.allocate(5);
+	assert(aPool.size() == 8);
+	Payload* third = aPool.allocate(2);
+	assert(aPool.full());
+
+	aPool.deallocate(first, 3);
+	assert(aPool.size() == 7);
+	aPool.deallocate(third, 2);
+	assert(aPool.size() == 5);
+
+	// Test that best-fit is working
+	Payload* another = aPool.allocate(2);
+	assert(aPool.size() == 7);
+	// It should be put in the slot after second
+	assert(another > second);
+	assert(another == third);
+
+	// Fit two allocations where we had our first allocation
+	first = aPool.allocate(1);
+	assert(aPool.size() == 8);
+	Payload* secondFirst = aPool.allocate(2); // I suck at names
+	assert(aPool.full());
+
+	// We should be out
+	assertThrown<std::bad_alloc>([&] { aPool.allocate(1); });
+
+	// Deallocate two of the same size and allocate again.
+	// Our algorithm should choose the first one
+	aPool.deallocate(another, 2);
+	assert(aPool.size() == 8);
+	aPool.deallocate(secondFirst, 2);
+	assert(aPool.size() == 6);
+
+	another = aPool.allocate(2);
+	assert(aPool.size() == 8);
+
+	assert(another == secondFirst);
+
+	// We should have two slots left
+	assert(aPool.remaining() == 2);
+
+	aPool.deallocate(first, 1);
+	aPool.deallocate(second, 5);
+	aPool.deallocate(another, 2);
 }
 
 } // end namespace anonymous
@@ -96,4 +148,5 @@ void Testing::runPoolTests()
 	test("Instantiation", &instantiation);
 	test("Construction", &construction);
 	test("Release", &release);
+	test("Allocate", &allocate);
 }
