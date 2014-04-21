@@ -1,15 +1,21 @@
 #pragma once
 
 #include <exception>
+#include <cassert>
 #include <cstdlib>
 #include <memory>
 #include <new>
 #include <utility>
+#include <type_traits>
 #include <queue>
 
-// Forward declaration (this comes after)
+// Forward declaration (this comes after the pool itself)
 template <typename T>
 class PoolAllocator;
+
+// Forward declaration (this comes after the pool itself)
+template <typename T>
+class PoolIterator;
 
 /**
  * \brief Provides a pool of memory from which a given type can be allocated
@@ -63,6 +69,13 @@ public:
 
 	/// Provides a typedef for the unique_ptr returned from Pool functions
 	typedef std::unique_ptr<T, std::function<void(T*)>> unique_ptr;
+
+	typedef PoolIterator<T> iterator;
+
+	typedef PoolIterator<const T> const_iterator;
+
+	friend class PoolIterator<T>;
+	friend class PoolIterator<const T>;
 
 	/**
 	 * \brief Constructs a pool of a given size
@@ -127,7 +140,7 @@ public:
 		for (Slot* curr = firstFree; curr != nullptr; curr = curr->next)
 			++check;
 
-		assert (check == numSlots - numAllocated);
+		assert(check == numSlots - numAllocated);
 #endif
 		return numSlots - numAllocated;
 	}
@@ -359,6 +372,12 @@ public:
 		deallocate(toRelease, 1);
 	}
 
+	iterator begin() { return iterator(*this); }
+
+	const_iterator begin() const { return const_iterator(*this); }
+
+	const_iterator cbegin() const { return const_iterator(*this); }
+
 	// No copy or assign
 	
 	/// The copy constructor is deleted. A copy of a pool is useless
@@ -368,7 +387,6 @@ public:
 	/// The assignment operator is deleted. A copy of a pool is useless
 	/// since its already-allocated slots will have no users.
 	const Pool& operator=(const Pool&) = delete;
-
 
 private:
 
@@ -443,4 +461,108 @@ public:
 
 	/// The pool to use.
 	Pool<T>& pool;
+};
+
+/**
+ * \brief A simple forward iterator that lets us iterate through a pool's used slots
+ * \warning This iterator is invalidated if the pool is modified
+ *
+ * If you're perplexed by all the `std::remove_const<T>` nonsense,
+ * it is so we can have const and non-const iterators.
+ * In C++, the standard library containers offer both:
+ *   - non-const iterators let you iterate through the collection
+ *     and modify the items in the collection.
+ *   - const iterators let you iterate through a collection,
+ *     but do not let you modify its items.
+ *
+ * To get a const iterator, we `const T` from the pool as the template argument here.
+ * For example, for a Pool of ints (`Pool<int>`), `cbegin` returns
+ * a pool iterator of type `PoolIterator<const int>`.
+ * However, you'll notice that we now need to strip the `const` off again when
+ * referring to the pool's types. Hence `std::remove_const`.
+ */
+
+#pragma GCC diagnostic push
+// Shut gcc up about std::iterator having a non-virtual destructor
+#pragma GCC diagnostic ignored "-Weffc++"
+template <typename T>
+class PoolIterator : public std::iterator<std::forward_iterator_tag, T> {
+#pragma GCC diagnostic pop
+
+public:
+	/// Iterators must be default-constructible
+	PoolIterator() : current(nullptr), nextFree(nullptr) { }
+
+	/// Default copy constructor - just copy the members
+	PoolIterator(const PoolIterator&) = default;
+
+	/// Creates an iterator that starts at the first used slot in a pool
+	PoolIterator(const Pool<typename std::remove_const<T>::type>& pool) :
+		current(pool.buff),
+		nextFree(pool.firstFree)
+	{
+		// If our current slot is a free node, keep incrementing until it is not.
+		while (current == nextFree) {
+			++current;
+			nextFree = nextFree->next;
+		}
+	}
+
+	// Common iterator operators.
+	// Iterators act like pointers to their current item and can be dereferenced
+	// as such.
+
+	T& operator*() const { return *reinterpret_cast<T*>(current); }
+
+	T* operator->() const { return reinterpret_cast<T*>(current); }
+
+	/// Equality. Two iterators are true if they are pointing at the same item.
+	bool operator==(const PoolIterator& o) const
+	{
+#ifndef NDEBUG
+		// If the two are equal, nextFree should also be the same unless
+		// someone modified the tree like they weren't supposed to.
+		if (current == o.current)
+			assert(nextFree == o.nextFree);
+#endif
+		return current == o.current;
+	}
+
+	/// Comparison operator, needed for all forward iterators
+	bool operator<(const PoolIterator& o) const
+	{
+		/// A default-constructed iterator is always "after" a valid one
+		if (current != nullptr && o.current == nullptr)
+			return true;
+
+		return current < o.current;
+	}
+
+	/// Pre-increment
+	PoolIterator& operator++()
+	{
+		// Increment the current pointer
+		++current;
+
+		// If our current slot is a free node, keep incrementing until it is not.
+		while (current == nextFree) {
+			++current;
+			nextFree = nextFree->next;
+		}
+
+		return *this;
+	}
+
+	/// Post-increment
+	PoolIterator operator++(int)
+	{
+		PoolIterator<T> ret(*this);
+		operator++();
+		return ret;
+	}
+
+private:
+	// gcc tells me I need to use "typename". Huh. Okay.
+	typename Pool<typename std::remove_const<T>::type>::Slot* current;
+	typename Pool<typename std::remove_const<T>::type>::Slot* nextFree;
 };

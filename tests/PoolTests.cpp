@@ -159,6 +159,51 @@ void forSTL()
 	assertThrown<std::bad_alloc>([&] { vector<Payload, PoolAllocator<Payload>> vec3(1, aPool.getAllocator()); });
 }
 
+void iteration()
+{
+	Pool<Payload> aPool(5);
+	vector<Payload*> pointers;
+
+	// Allocate a bunch of objects
+	for (size_t i = 0; i < aPool.max_size(); ++i) {
+		pointers.emplace_back(aPool.construct(i, 42 + i));
+	}
+
+	// Check that they were constructed as we expect
+	for (size_t i = 0; i < pointers.size(); ++i) {
+		Payload& p = *pointers[i];
+		assert(p.a == (int)i);
+		assert(p.b == 42 + (int)i);
+	}
+
+	auto testIterator = [&](const std::initializer_list<int>& l) {
+		Pool<Payload>::const_iterator it = aPool.cbegin();
+		for (int n : l) {
+			// Test both operators
+			assert(n == it->a);
+			assert(n == (*it).a);
+			++it;
+		}
+	};
+
+	// Release them
+	assert(aPool.size() == 5);
+	aPool.destroy(pointers[0]);
+	assert(aPool.size() == 4);
+	testIterator({1, 2, 3, 4});
+	aPool.destroy(pointers[4]);
+	assert(aPool.size() == 3);
+	testIterator({1, 2, 3});
+	aPool.destroy(pointers[1]);
+	assert(aPool.size() == 2);
+	testIterator({2, 3});
+	aPool.destroy(pointers[3]);
+	assert(aPool.size() == 1);
+	testIterator({2});
+	aPool.destroy(pointers[2]);
+	assert(aPool.size() == 0);
+}
+
 } // end namespace anonymous
 
 void Testing::runPoolTests()
@@ -169,4 +214,5 @@ void Testing::runPoolTests()
 	test("Destruction", &destroy);
 	test("Allocate", &allocate);
 	test("As allocator for STL", &forSTL);
+	test("Iteration", &iteration);
 }
