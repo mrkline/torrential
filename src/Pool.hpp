@@ -378,6 +378,12 @@ public:
 
 	const_iterator cbegin() const { return const_iterator(*this); }
 
+	iterator end() { return iterator(buff + numSlots); }
+
+	const_iterator end() const { return const_iterator(buff + numSlots); }
+
+	const_iterator cend() const { return const_iterator(buff + numSlots); }
+
 	// No copy or assign
 
 	/// The copy constructor is deleted. A copy of a pool is useless
@@ -508,6 +514,13 @@ public:
 		}
 	}
 
+	/// Creates an iterator for the Pool::end family of functions
+	PoolIterator(typename Pool<typename std::remove_const<T>::type>::Slot* end) :
+		current(end),
+		nextFree(nullptr)
+	{
+	}
+
 	// Common iterator operators.
 	// Iterators act like pointers to their current item and can be dereferenced
 	// as such.
@@ -531,10 +544,8 @@ public:
 	/// Comparison operator, needed for all forward iterators
 	bool operator<(const PoolIterator& o) const
 	{
-		/// A default-constructed iterator is always "after" a valid one
-		if (current != nullptr && o.current == nullptr)
-			return true;
-
+		assert(current != nullptr);
+		assert(o.current != nullptr);
 		return current < o.current;
 	}
 

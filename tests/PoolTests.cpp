@@ -179,11 +179,18 @@ void iteration()
 	auto testIterator = [&](const std::initializer_list<int>& l) {
 		Pool<Payload>::const_iterator it = aPool.cbegin();
 		for (int n : l) {
+			assert(it < aPool.cend());
 			// Test both operators
 			assert(n == it->a);
 			assert(n == (*it).a);
 			++it;
 		}
+		// Make sure our iterators reach the end properly
+		while (it++ < aPool.cend()) { }
+		// Test that these have been built correctly;
+		// their mere invocation will bomb if there are template issues.
+		aPool.begin();
+		aPool.end();
 	};
 
 	// Release them
