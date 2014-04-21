@@ -6,22 +6,6 @@
 #include <utility>
 #include <queue>
 
-namespace Exceptions {
-
-/// Thrown if the user tries to construct an item in a full pool
-class PoolFullException final : public InvalidOperationException {
-public:
-	PoolFullException(const std::string& exceptionMessage,
-	                  const char* file, int line) :
-		InvalidOperationException(exceptionMessage, file, line, "pool full")
-	{ }
-
-	PoolFullException(const PoolFullException&) = default;
-
-	PoolFullException& operator=(PoolFullException&) = delete;
-};
-
-} // end namespace Exceptions
 
 template <typename T>
 class Pool {
