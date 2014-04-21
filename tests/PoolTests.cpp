@@ -186,7 +186,7 @@ void iteration()
 			++it;
 		}
 		// Make sure our iterators reach the end properly
-		while (it++ < aPool.cend()) { }
+		assert(it == aPool.cend());
 		// Test that these have been built correctly;
 		// their mere invocation will bomb if there are template issues.
 		aPool.begin();
