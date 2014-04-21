@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <cstdlib>
+#include <memory>
 #include <new>
 #include <utility>
 #include <queue>
@@ -58,6 +59,8 @@ public:
 	typedef T value_type;
 
 	typedef PoolAllocator<T> allocator;
+
+	typedef std::unique_ptr<T, std::function<void(T*)>> PoolUniquePtr;
 
 	/**
 	 * \brief Constructs a pool of a given size
@@ -327,6 +330,19 @@ public:
 			return nullptr;
 		}
 	}
+
+	template <typename... Args>
+	PoolUniquePtr constructUnique(Args&&... args)
+	{
+		return PoolUniquePtr(construct(std::forward<Args>(args)...), [this](T* t) { destroy(t); });
+	}
+
+	template <typename... Args>
+	std::shared_ptr<T> constructShared(Args&&... args)
+	{
+		return std::shared_ptr<T>(construct(std::forward<Args>(args)...), [this](T* t) { destroy(t); });
+	}
+
 
 	/// Destroys then deallocates an object constructed from the pool using _construct_
 	/// or _tryConstruct_
