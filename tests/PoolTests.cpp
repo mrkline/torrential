@@ -11,6 +11,7 @@ using namespace Testing;
 
 namespace {
 
+/// A dumb payload with which to test our Pool
 class Payload {
 public:
 
@@ -23,18 +24,20 @@ public:
 	int a, b;
 };
 
+/// Test construction and destruction of the Pool
 void instantiation()
 {
 	Pool<Payload> aPool(100);
 }
 
+/// Test construction and destruction of objects from the Pool
 void construction()
 {
 	Pool<Payload> aPool(5);
 	vector<Payload*> pointers;
 
 	assert(aPool.size() == 0);
-	
+
 	// Allocate a bunch of objects
 	for (size_t i = 0; i < aPool.max_size(); ++i) {
 		pointers.emplace_back(aPool.construct(i, 42 + i));
@@ -53,14 +56,17 @@ void construction()
 	assert(aPool.tryConstruct() == nullptr);
 
 	for (size_t i = 0; i < pointers.size(); ++i)
-		aPool.release(pointers[i]);
+		aPool.destroy(pointers[i]);
 }
 
-void release()
+/// Test the out-of-order destruction of objects from the Pool,
+/// which should give us better covereage of Pool::destroy
+/// than the construction test.
+void destroy()
 {
 	Pool<Payload> aPool(5);
 	vector<Payload*> pointers;
-	
+
 	// Allocate a bunch of objects
 	for (size_t i = 0; i < aPool.max_size(); ++i) {
 		pointers.emplace_back(aPool.construct(i, 42 + i));
@@ -75,18 +81,19 @@ void release()
 
 	// Release them
 	assert(aPool.size() == 5);
-	aPool.release(pointers[0]);
+	aPool.destroy(pointers[0]);
 	assert(aPool.size() == 4);
-	aPool.release(pointers[4]);
+	aPool.destroy(pointers[4]);
 	assert(aPool.size() == 3);
-	aPool.release(pointers[1]);
+	aPool.destroy(pointers[1]);
 	assert(aPool.size() == 2);
-	aPool.release(pointers[3]);
+	aPool.destroy(pointers[3]);
 	assert(aPool.size() == 1);
-	aPool.release(pointers[2]);
+	aPool.destroy(pointers[2]);
 	assert(aPool.size() == 0);
 }
 
+/// Test out Pool::allocate and Pool::deallocate
 void allocate()
 {
 	Pool<Payload> aPool(10);
@@ -142,6 +149,7 @@ void allocate()
 	aPool.deallocate(another, 2);
 }
 
+/// Test using a pool and its allocator with a standard library container
 void forSTL()
 {
 	Pool<Payload> aPool(20);
@@ -158,7 +166,7 @@ void Testing::runPoolTests()
 	beginUnit("Pool");
 	test("Instantiation", &instantiation);
 	test("Construction", &construction);
-	test("Release", &release);
+	test("Destruction", &destroy);
 	test("Allocate", &allocate);
 	test("As allocator for STL", &forSTL);
 }
