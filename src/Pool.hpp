@@ -379,7 +379,7 @@ public:
 	const_iterator cbegin() const { return const_iterator(*this); }
 
 	// No copy or assign
-	
+
 	/// The copy constructor is deleted. A copy of a pool is useless
 	/// since its already-allocated slots will have no users.
 	Pool(const Pool&) = delete;
