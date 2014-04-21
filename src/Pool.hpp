@@ -572,6 +572,23 @@ public:
 		return ret;
 	}
 
+	/// Increment by a given amount
+	PoolIterator& operator+=(size_t by)
+	{
+		for (size_t i = 0; i < by; ++i)
+			operator++();
+
+		return *this;
+	}
+
+	/// Increment by a given amount
+	PoolIterator operator+(size_t by)
+	{
+		PoolIterator<T> ret(*this);
+		ret += by;
+		return ret;
+	}
+
 private:
 	// gcc tells me I need to use "typename". Huh. Okay.
 	typename Pool<typename std::remove_const<T>::type>::Slot* current;

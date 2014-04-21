@@ -189,8 +189,7 @@ void iteration()
 		assert(it == aPool.cend());
 		// Test that these have been built correctly;
 		// their mere invocation will bomb if there are template issues.
-		aPool.begin();
-		aPool.end();
+		assert(aPool.begin() + l.size() ==aPool.end());
 	};
 
 	// Release them
