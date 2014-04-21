@@ -227,7 +227,7 @@ public:
 
 		// Iterate through our free list, finding contiguous chunks
 		Slot** curr = &firstFree;
-		std::pair<int, Slot**> countInfo = getContiguousCount(*curr);
+		std::pair<size_t, Slot**> countInfo = getContiguousCount(*curr);
 		for (; *curr != nullptr; curr = countInfo.second, countInfo = getContiguousCount(*curr)) {
 			// If a chunk can fit our needed size, throw it in the priority queue.
 			if (countInfo.first >= num)
@@ -406,18 +406,18 @@ private:
 	 *          or 0 and null if null is given as an input
 	 * \warning This function assumes that the pointer it is passed is free.
 	 */
-	std::pair<int, Slot**> getContiguousCount(Slot* s) const
+	std::pair<size_t, Slot**> getContiguousCount(Slot* s) const
 	{
 		if (s == nullptr)
-			return std::pair<int, Slot**>(0, nullptr); 
+			return std::pair<size_t, Slot**>(0, nullptr);
 		assert(isValidPointer(s));
-		int contig = 1;
+		size_t contig = 1;
 		while (s->next == s + 1) {
 			++contig;
 			++s;
 		}
 
-		return std::pair<int, Slot**>(contig, &s->next);
+		return std::pair<size_t, Slot**>(contig, &s->next);
 	}
 
 	/// \brief Checks if a pointer is within the range of the buffer and is aligned.
