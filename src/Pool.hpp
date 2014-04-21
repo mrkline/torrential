@@ -6,11 +6,17 @@
 #include <utility>
 #include <queue>
 
+// Forward declaration (this comes after)
+template <typename T>
+class PoolAllocator;
 
 template <typename T>
 class Pool {
 
 public:
+
+	typedef T value_type;
+	typedef PoolAllocator<T> allocator;
 
 	Pool(size_t poolSize) :
 		buff(nullptr),
@@ -41,6 +47,8 @@ public:
 
 		free(buff);
 	}
+
+	PoolAllocator<T> getAllocator() { return PoolAllocator<T>(*this); }
 
 	/// Gets the number of free slots
 	size_t remaining() const
@@ -234,4 +242,20 @@ private:
 	Slot* buff;
 	Slot* firstFree;
 	size_t numSlots;
+};
+
+template <typename T>
+class PoolAllocator {
+
+public:
+
+	typedef T value_type;
+
+	PoolAllocator(Pool<T>& p) : pool(p) { }
+
+	T* allocate(size_t num) { return pool.allocate(num); }
+
+	void deallocate(T* allocated, size_t n) { return pool.deallocate(allocated, n); }
+
+	Pool<T>& pool;
 };

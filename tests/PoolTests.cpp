@@ -16,6 +16,8 @@ public:
 
 	Payload() : a(0), b(0) { }
 
+	Payload(const Payload&) = default;
+
 	Payload(int a, int b) : a(a), b(b) { }
 
 	int a, b;
@@ -140,6 +142,15 @@ void allocate()
 	aPool.deallocate(another, 2);
 }
 
+void forSTL()
+{
+	Pool<Payload> aPool(20);
+	vector<Payload, PoolAllocator<Payload>> vec1(10, aPool.getAllocator());
+	vector<Payload, PoolAllocator<Payload>> vec2(10, aPool.getAllocator());
+	// We should be out of memory in the pool now
+	assertThrown<std::bad_alloc>([&] { vector<Payload, PoolAllocator<Payload>> vec3(1, aPool.getAllocator()); });
+}
+
 } // end namespace anonymous
 
 void Testing::runPoolTests()
@@ -149,4 +160,5 @@ void Testing::runPoolTests()
 	test("Construction", &construction);
 	test("Release", &release);
 	test("Allocate", &allocate);
+	test("As allocator for STL", &forSTL);
 }
