@@ -58,9 +58,11 @@ public:
 
 	typedef T value_type;
 
+	/// Provides a quick typedef for the pool's allocator (see PoolAllocator)
 	typedef PoolAllocator<T> allocator;
 
-	typedef std::unique_ptr<T, std::function<void(T*)>> PoolUniquePtr;
+	/// Provides a typedef for the unique_ptr returned from Pool functions
+	typedef std::unique_ptr<T, std::function<void(T*)>> unique_ptr;
 
 	/**
 	 * \brief Constructs a pool of a given size
@@ -331,12 +333,16 @@ public:
 		}
 	}
 
+	/// Acts as the same manner as construct, but returns a std::unique_ptr
+	/// that destroys the object automatically when the pointer falls out of scope
 	template <typename... Args>
-	PoolUniquePtr constructUnique(Args&&... args)
+	unique_ptr constructUnique(Args&&... args)
 	{
-		return PoolUniquePtr(construct(std::forward<Args>(args)...), [this](T* t) { destroy(t); });
+		return unique_ptr(construct(std::forward<Args>(args)...), [this](T* t) { destroy(t); });
 	}
 
+	/// Acts as the same manner as construct, but returns a std::shared_ptr
+	/// that destroys the object automatically when all shared pointers to this object falls out of scope
 	template <typename... Args>
 	std::shared_ptr<T> constructShared(Args&&... args)
 	{
