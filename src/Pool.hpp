@@ -182,7 +182,7 @@ public:
 	 * \todo This could be optimized for the case where we are allocating
 	 *       a single slot.
 	 *
-	 * Allocation is done by best-fit, and, in the case of a tie,
+	 * Allocation is done by first-fit, and, in the case of a tie,
 	 * by whatever block is first in the pool.
 	 *
 	 * Complexity is O(n), as we must search for free blocks via the
@@ -193,62 +193,24 @@ public:
 	 */
 	T* allocate(size_t num)
 	{
-		// A potential block to allocate
-		struct Block {
-			// The start of the block
-			Slot* start;
-			// The number of slots in the block
-			size_t size;
-			// A pointer to the "next free" pointer pointing to this block.
-			// Useful so that we can update it if this block is used.
-			Slot** previous;
-
-			Block(Slot* st, size_t sz, Slot** prev) : start(st), size(sz), previous(prev) { }
-		};
-
-		// Provides ordering for the priority queue of which block to pick.
-		const auto calcFit = [num](const Block& b1, const Block& b2) {
-			// We shouldn't have blocks that don't fit our needed amount in the queue
-			assert(b1.size >= num);
-			assert(b2.size >= num);
-			const int n = (int)num;
-			const int b1n = (int)b1.size;
-			const int b2n = (int)b2.size;
-			const int a1 = abs(b1n - n);
-			const int a2 = abs(b2n - n);
-			if (a1 == a2)
-				return b1.start > b2.start; // If these are the same fit, prefer the one closer to the start
-			else
-				return  a1 > a2; // Sort by best fit
-		};
-
-		// By using a priority queue with calcFit, we get a best-fit algorithm.
-		std::priority_queue<Block, std::vector<Block>, decltype(calcFit)> bestFitter(calcFit);
-
 		// Iterate through our free list, finding contiguous chunks
 		Slot** curr = &firstFree;
 		std::pair<size_t, Slot**> countInfo = getContiguousCount(*curr);
 		for (; *curr != nullptr; curr = countInfo.second, countInfo = getContiguousCount(*curr)) {
-			// If a chunk can fit our needed size, throw it in the priority queue.
-			if (countInfo.first >= num)
-				bestFitter.emplace(*curr, countInfo.first, curr);
+			// If a chunk can fit our needed size, take it
+			if (countInfo.first >= num) {
+				numAllocated += num;
+				T* ret = (T*)*curr;
+				// Set our previous "next free" pointer to
+				// the next pointer at the end of this block,
+				// effectively skipping this block
+				*curr = (*curr)[num - 1].next;
+				return ret;
+			}
 		}
 
 		// We didn't find any block that could meet our request.
-		if (bestFitter.empty())
-			throw std::bad_alloc();
-
-		numAllocated += num;
-
-		// The top of the priority queue gives us our best fit.
-		const auto best = bestFitter.top();
-
-		// Set our previous "next free" pointer to
-		// the next pointer at the end of this block,
-		// effectively skipping this block
-		*best.previous = best.start[num - 1].next;
-
-		return reinterpret_cast<T*>(best.start); // Return our best fit block
+		throw std::bad_alloc();
 	}
 
 	/**

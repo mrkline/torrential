@@ -113,12 +113,12 @@ void allocate()
 	aPool.deallocate(third, 2);
 	assert(aPool.size() == 5);
 
-	// Test that best-fit is working
+	// Test that first-fit is working
 	Payload* another = aPool.allocate(2);
 	assert(aPool.size() == 7);
-	// It should be put in the slot after second
-	assert(another > second);
-	assert(another == third);
+	// It should be put in the slot before second
+	assert(another < second);
+	assert(another == first);
 
 	// Fit two allocations where we had our first allocation
 	first = aPool.allocate(1);
@@ -129,24 +129,10 @@ void allocate()
 	// We should be out
 	assertThrown<std::bad_alloc>([&] { aPool.allocate(1); });
 
-	// Deallocate two of the same size and allocate again.
-	// Our algorithm should choose the first one
 	aPool.deallocate(another, 2);
-	assert(aPool.size() == 8);
-	aPool.deallocate(secondFirst, 2);
-	assert(aPool.size() == 6);
-
-	another = aPool.allocate(2);
-	assert(aPool.size() == 8);
-
-	assert(another == secondFirst);
-
-	// We should have two slots left
-	assert(aPool.remaining() == 2);
-
 	aPool.deallocate(first, 1);
 	aPool.deallocate(second, 5);
-	aPool.deallocate(another, 2);
+	aPool.deallocate(secondFirst, 2);
 }
 
 /// Test using a pool and its allocator with a standard library container
