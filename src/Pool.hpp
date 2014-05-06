@@ -340,13 +340,24 @@ public:
 
 	/**
 	 * \brief Destroys an object from an iterator
+	 * \returns An iterator to the next element
 	 *
 	 * Coplexity is O(1), and is therefore preferable to the other destroy
 	 */
-	void destroy(iterator it)
+	iterator destroy(iterator it)
 	{
 		if (!isValidPointer(it.current))
 			throw std::invalid_argument("The provided iterator is not valid");
+
+		auto ret = it + 1;
+
+		// If the return value's "next valid" pointer is the same as
+		// the "next valid" pointer of the iterator we're destroying,
+		// we need to update the return value.
+		// Since the current slot will, in the next step, be free,
+		// the current slot's next pointer will be the return value's next pointer.
+		if (ret.nextFree == it.nextFree)
+			ret.nextFree = &it.current->next;
 
 		it->~T();
 
@@ -356,6 +367,8 @@ public:
 		*const_cast<Slot**>(it.nextFree) = it.current;
 
 		--numAllocated;
+
+		return ret;
 	}
 
 	iterator begin() { return iterator(*this); }
@@ -457,7 +470,10 @@ public:
 
 /**
  * \brief A simple forward iterator that lets us iterate through a pool's used slots
- * \warning This iterator is invalidated if the pool is modified
+ * \warning This iterator is invalidated if slots before the current iterator
+ *          are added or removed.
+ *          In short, don't add to the pool while iterating through it,
+ *          and only remove using destroy(iterator)
  *
  * If you're perplexed by all the `std::remove_const<T>` nonsense,
  * it is so we can have const and non-const iterators.
@@ -473,7 +489,6 @@ public:
  * However, you'll notice that we now need to strip the `const` off again when
  * referring to the pool's types. Hence `std::remove_const`.
  */
-
 #pragma GCC diagnostic push
 // Shut gcc up about std::iterator having a non-virtual destructor
 #pragma GCC diagnostic ignored "-Weffc++"
@@ -483,9 +498,6 @@ class PoolIterator : public std::iterator<std::forward_iterator_tag, T> {
 
 public:
 	friend class Pool<typename std::remove_const<T>::type>;
-
-	/// Iterators must be default-constructible
-	PoolIterator() : current(nullptr), nextFree(nullptr) { }
 
 	/// Default copy constructor - just copy the members
 	PoolIterator(const PoolIterator&) = default;
@@ -508,6 +520,9 @@ public:
 		nextFree(nullptr)
 	{
 	}
+
+	/// Iterators must be default-constructible
+	PoolIterator() : current(nullptr), nextFree(nullptr) { }
 
 	// Common iterator operators.
 	// Iterators act like pointers to their current item and can be dereferenced
@@ -572,6 +587,7 @@ public:
 	}
 
 private:
+
 	// gcc tells me I need to use "typename". Huh. Okay.
 	typename Pool<typename std::remove_const<T>::type>::Slot* current;
 	typename Pool<typename std::remove_const<T>::type>::Slot* const* nextFree;
