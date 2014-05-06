@@ -148,18 +148,10 @@ void forSTL()
 void iteration()
 {
 	Pool<Payload> aPool(5);
-	vector<Payload*> pointers;
 
 	// Allocate a bunch of objects
 	for (size_t i = 0; i < aPool.max_size(); ++i) {
-		pointers.emplace_back(aPool.construct(i, 42 + i));
-	}
-
-	// Check that they were constructed as we expect
-	for (size_t i = 0; i < pointers.size(); ++i) {
-		Payload& p = *pointers[i];
-		assert(p.a == (int)i);
-		assert(p.b == 42 + (int)i);
+		aPool.construct(i, 42 + i);
 	}
 
 	auto testIterator = [&](const std::initializer_list<int>& l) {
@@ -180,19 +172,19 @@ void iteration()
 
 	// Release them
 	assert(aPool.size() == 5);
-	aPool.destroy(pointers[0]);
+	aPool.destroy(aPool.begin());
 	assert(aPool.size() == 4);
 	testIterator({1, 2, 3, 4});
-	aPool.destroy(pointers[4]);
+	aPool.destroy(aPool.begin() + 3);
 	assert(aPool.size() == 3);
 	testIterator({1, 2, 3});
-	aPool.destroy(pointers[1]);
+	aPool.destroy(aPool.begin());
 	assert(aPool.size() == 2);
 	testIterator({2, 3});
-	aPool.destroy(pointers[3]);
+	aPool.destroy(aPool.begin() + 1);
 	assert(aPool.size() == 1);
 	testIterator({2});
-	aPool.destroy(pointers[2]);
+	aPool.destroy(aPool.begin());
 	assert(aPool.size() == 0);
 }
 

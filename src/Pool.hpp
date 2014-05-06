@@ -325,13 +325,37 @@ public:
 	}
 
 
-	/// Destroys then deallocates an object constructed from the pool using _construct_
-	/// or _tryConstruct_
+	/**
+	 * \brief Destroys then deallocates an object constructed from the pool using _construct_
+	 *        or _tryConstruct_
+	 *
+	 * Complexity is O(n). If possible, prefer the iterator version, as it is O(1)
+	 */
 	void destroy(T* toRelease)
 	{
 		toRelease->~T(); // Call its destructor
 
 		deallocate(toRelease, 1);
+	}
+
+	/**
+	 * \brief Destroys an object from an iterator
+	 *
+	 * Coplexity is O(1), and is therefore preferable to the other destroy
+	 */
+	void destroy(iterator it)
+	{
+		if (!isValidPointer(it.current))
+			throw std::invalid_argument("The provided iterator is not valid");
+
+		it->~T();
+
+		it.current->next = *it.nextFree;
+		// Yes, const_cast is nasty.
+		// But, it seems simpler than more template matamagic in the iterator
+		*const_cast<Slot**>(it.nextFree) = it.current;
+
+		--numAllocated;
 	}
 
 	iterator begin() { return iterator(*this); }
@@ -458,6 +482,8 @@ class PoolIterator : public std::iterator<std::forward_iterator_tag, T> {
 #pragma GCC diagnostic pop
 
 public:
+	friend class Pool<typename std::remove_const<T>::type>;
+
 	/// Iterators must be default-constructible
 	PoolIterator() : current(nullptr), nextFree(nullptr) { }
 
@@ -467,12 +493,12 @@ public:
 	/// Creates an iterator that starts at the first used slot in a pool
 	PoolIterator(const Pool<typename std::remove_const<T>::type>& pool) :
 		current(pool.buff),
-		nextFree(pool.firstFree)
+		nextFree(&pool.firstFree)
 	{
 		// If our current slot is a free node, keep incrementing until it is not.
-		while (current == nextFree) {
+		while (current == *nextFree) {
 			++current;
-			nextFree = nextFree->next;
+			nextFree = &(*nextFree)->next;
 		}
 	}
 
@@ -494,12 +520,6 @@ public:
 	/// Equality. Two iterators are true if they are pointing at the same item.
 	bool operator==(const PoolIterator& o) const
 	{
-#ifndef NDEBUG
-		// If the two are equal, nextFree should also be the same unless
-		// someone modified the tree like they weren't supposed to.
-		if (current == o.current)
-			assert(nextFree == o.nextFree);
-#endif
 		return current == o.current;
 	}
 
@@ -518,9 +538,9 @@ public:
 		++current;
 
 		// If our current slot is a free node, keep incrementing until it is not.
-		while (current == nextFree) {
+		while (current == *nextFree) {
 			++current;
-			nextFree = nextFree->next;
+			nextFree = &(*nextFree)->next;
 		}
 
 		return *this;
@@ -554,5 +574,5 @@ public:
 private:
 	// gcc tells me I need to use "typename". Huh. Okay.
 	typename Pool<typename std::remove_const<T>::type>::Slot* current;
-	typename Pool<typename std::remove_const<T>::type>::Slot* nextFree;
+	typename Pool<typename std::remove_const<T>::type>::Slot* const* nextFree;
 };
