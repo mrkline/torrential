@@ -11,7 +11,7 @@ Peer::Peer (int IP, int upload, int download) :
 	// which provides warnings based on Effective C++ (a famous book),
 	// recommends it.
 	chunkList(),
-	connectionList()
+	interestedList()
 {
 	// don't do anything, but it is cool
 }

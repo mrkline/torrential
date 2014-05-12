@@ -54,7 +54,7 @@ void Simulator::connectPeers()
 		if (shouldConnect(rng)) {
 			// Initialize it
 			it->simCounter = 0; // sim counter gets reset
-			it->connectionList = getRandomPeerConnections(Peer::desiredPeerCount); // Get us some peers
+			it->interestedList = getRandomPeers(Peer::desiredPeerCount); // Get us some peers
 
 			// Move the peer to the connected list
 			connected.construct(std::move(*it));
@@ -67,10 +67,10 @@ void Simulator::connectPeers()
 	}
 }
 
-std::vector<Connection> Simulator::getRandomPeerConnections(size_t num,
-                                                            const std::vector<Connection>& ignore)
+std::vector<Peer*> Simulator::getRandomPeers(size_t num,
+                                             const std::vector<Peer*>& ignore)
 {
-	vector<Connection> ret; // The one we're going to return
+	vector<Peer*> ret; // The one we're going to return
 	ret.reserve(num);
 
 	// If we have fewer than num connected peers, congrats.
@@ -94,14 +94,12 @@ std::vector<Connection> Simulator::getRandomPeerConnections(size_t num,
 		// Only take the first num pointers
 		peerList.resize(num);
 
-		// Make connections from those
-		for (Peer* pp : peerList)
-			ret.emplace_back(pp);
+		ret = move(peerList);
 	}
 
 	// Remove peers we already have from the results
 	// TODO: This is n^2, but do smarter sorting or something later
-	for (const Connection& conn : ignore) {
+	for (Peer* conn : ignore) {
 		auto it = find(begin(ret), end(ret), conn);
 		if (it != end(ret))
 			ret.erase(it);

@@ -18,8 +18,8 @@ public:
 private:
 
 	// TODO: Take a list of connections we already have to filter those out
-	std::vector<Connection> getRandomPeerConnections(size_t num,
-	                                                 const std::vector<Connection>& ignore = std::vector<Connection>());
+	std::vector<Peer*> getRandomPeers(size_t num,
+	                                 const std::vector<Peer*>& ignore = std::vector<Peer*>());
 
 	Pool<Peer> connected; ///< The clients who are currently connected
 	Pool<Peer> disconnected; ///< The clients who are currently disconnected
