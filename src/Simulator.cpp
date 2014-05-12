@@ -56,7 +56,14 @@ void Simulator::connectPeers()
 		if (shouldConnect(rng)) {
 			// Initialize it
 			it->simCounter = 0; // sim counter gets reset
-			it->interestedList = getRandomPeers(Peer::desiredPeerCount); // Get us some peers
+			// Get us some peers
+			auto peerList = getRandomPeers(Peer::desiredPeerCount);
+			assert(it->interestedList.empty()); // This had better be empty
+			// Convert our Peer* list to a pair<Peer*, int> list
+			transform(begin(peerList), end(peerList), begin(it->interestedList),
+			          [](Peer* p) {
+				return pair<Peer*, int>(p, 0);
+			});
 
 			// Move the peer to the connected list
 			connected.construct(std::move(*it));
@@ -77,10 +84,8 @@ void Simulator::disconnectPeers()
 	for (auto it = begin(connected); it != end(connected);) {
 		if (shouldDisconnect(rng)) {
 
-			// Go ahead and kill its interested list since we don't need it anymore
-			// and it will get a new one if/when we reconnect
-			it->interestedList.clear();
-			it->interestedList.shrink_to_fit();
+			// See Peer::onDisconnect. Basically minimizing memory footprint when unused
+			it->onDisconnect();
 
 			// Why the hell are we dereferncing, then taking address of?
 			// Well, you see, it isn't a pointer, it's an iterator.
@@ -114,7 +119,10 @@ void Simulator::disconnectPeers()
 		// Search through its interested list for the peers we removed
 		for (auto it = begin(cp.interestedList);
 		     it != end(cp.interestedList);
-			 it = find_first_of(it, end(cp.interestedList), begin(removing), end(removing))) {
+		     // Ugly as sin, but use a lambda to compare the pointers in removing
+			 // to the pairs in each Peers' interestedList
+			 it = find_first_of(it, end(cp.interestedList), begin(removing), end(removing),
+			                    [] (pair<Peer*, int> pair, Peer* pointer) { return pair.first == pointer; })) {
 
 			toRemove.emplace_back(it);
 			++it; // on to the next one

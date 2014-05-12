@@ -3,6 +3,10 @@
 
 #include "Peer.hpp"
 
+#include <algorithm>
+
+using namespace std;
+
 Peer::Peer (int IP, int upload, int download) :
 	IPAddress(IP),
 	uploadRate(upload),
@@ -16,5 +20,22 @@ Peer::Peer (int IP, int upload, int download) :
 	// don't do anything, but it is cool
 }
 
-// Algorithm
-// for each node
+void Peer::onDisconnect()
+{
+	// Go ahead and kill its interested list since we don't need it anymore
+	// and it will get a new one if/when we reconnect
+	interestedList.clear();
+	interestedList.shrink_to_fit();
+}
+
+void Peer::reorderPeers()
+{
+	// Sort by most contributions first
+	sort(begin(interestedList), end(interestedList), [](const pair<Peer*, int>&a, const pair<Peer*, int>& b) {
+		return a.second > b.second;
+	});
+
+	// Zero out the counts
+	for (auto& p : interestedList)
+		p.second = 0;
+}
