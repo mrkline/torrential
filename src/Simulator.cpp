@@ -46,6 +46,7 @@ void Simulator::tick()
 {
 	connectPeers();
 	disconnectPeers();
+	bumpSimCount();
 }
 
 void Simulator::connectPeers()
@@ -166,4 +167,10 @@ std::vector<Peer*> Simulator::getRandomPeers(size_t num,
 	}
 
 	return ret;
+}
+
+void Simulator::bumpSimCount()
+{
+	for (Peer& p : connected)
+		++p.simCounter;
 }

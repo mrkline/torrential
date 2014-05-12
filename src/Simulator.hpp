@@ -17,6 +17,8 @@ public:
 
 	void disconnectPeers();
 
+	void bumpSimCount();
+
 private:
 
 	// TODO: Take a list of connections we already have to filter those out
