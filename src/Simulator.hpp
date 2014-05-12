@@ -7,13 +7,19 @@
 
 /// The whole shebang. Holds our list of connected and disconnected peers.
 class Simulator {
-
 public:
+
 	Simulator(size_t numClients);
 
 	void tick();
 
+	void connectPeers();
+
 private:
+
+	// TODO: Take a list of connections we already have to filter those out
+	std::vector<Connection> getRandomPeerConnections(size_t num,
+	                                                 const std::vector<Connection>& ignore = std::vector<Connection>());
 
 	Pool<Peer> connected; ///< The clients who are currently connected
 	Pool<Peer> disconnected; ///< The clients who are currently disconnected
