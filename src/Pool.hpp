@@ -8,6 +8,7 @@
 #include <utility>
 #include <type_traits>
 #include <queue>
+#include <utility> // For rel_ops
 
 // Forward declaration (this comes after the pool itself)
 template <typename T>
@@ -16,6 +17,13 @@ class PoolAllocator;
 // Forward declaration (this comes after the pool itself)
 template <typename T>
 class PoolIterator;
+
+
+// Provides !=, >, <=, >=, etc.
+// Usually a "using namespace" statement in a header is a capital sin
+// (since anyone including this header is now using this namespace without asking),
+// but non-template functions override template ones, so this shouldn't be a problem.
+using namespace std::rel_ops;
 
 /**
  * \brief Provides a pool of memory from which a given type can be allocated
@@ -494,6 +502,7 @@ public:
 #pragma GCC diagnostic ignored "-Weffc++"
 template <typename T>
 class PoolIterator : public std::iterator<std::forward_iterator_tag, T> {
+
 #pragma GCC diagnostic pop
 
 public:
