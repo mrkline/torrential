@@ -2,6 +2,7 @@
 
 #include <random>
 #include <vector>
+#include <unordered_map>
 
 #include "Pool.hpp"
 #include "Peer.hpp"
@@ -14,17 +15,22 @@ public:
 
 	void tick();
 
+private:
+
 	void connectPeers();
 
 	void disconnectPeers();
 
+	/**
+	 * Gets a map of all offers from one connected peer to another
+	 * \returns A map mapping dest -> a list of pairs in the form of (source, chunk indices)
+	 */
+	std::unordered_map<Peer*, std::vector<std::pair<Peer*, std::vector<size_t>>>> makeOffers();
+
 	void bumpSimCount();
 
-private:
-
-	// TODO: Take a list of connections we already have to filter those out
 	std::vector<Peer*> getRandomPeers(size_t num,
-	                                 const std::vector<Peer*>& ignore = std::vector<Peer*>());
+	                                  const std::vector<Peer*>& ignore = std::vector<Peer*>());
 
 	Pool<Peer> connected; ///< The clients who are currently connected
 	Pool<Peer> disconnected; ///< The clients who are currently disconnected

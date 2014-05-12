@@ -177,6 +177,20 @@ std::vector<Peer*> Simulator::getRandomPeers(size_t num,
 	return ret;
 }
 
+std::unordered_map<Peer*, std::vector<std::pair<Peer*, std::vector<size_t>>>> Simulator::makeOffers()
+{
+	unordered_map<Peer*, vector<pair<Peer*, vector<size_t>>>> ret;
+
+	for (Peer& p : connected) {
+		auto offers = p.makeOffers();
+		for (auto& offer : offers) {
+			ret[offer.first].emplace_back(&p, offer.second);
+		}
+	}
+
+	return ret;
+}
+
 void Simulator::bumpSimCount()
 {
 	for (Peer& p : connected)
