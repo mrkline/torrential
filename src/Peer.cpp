@@ -79,7 +79,7 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 	});
 
 	// Set up our return value
-	vector<pair<Peer*, vector<size_t>>> ret(min((size_t)4, interestedList.size()));
+	vector<pair<Peer*, vector<size_t>>> ret(min(topToSend, interestedList.size()));
 
 	// Set up our peer pointers quick
 	for (size_t i = 0; i < topToSend && i < interestedList.size(); ++i) {
@@ -94,7 +94,9 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 		// Wrap around the peers we're sending to, finding something we can send
 		size_t startingPoint = peerIdx;
 		do {
+			assert(peerIdx < interestedList.size());
 			Peer* top = interestedList[peerIdx].first;
+			assert(peerIdx < ret.size());
 			assert(ret[peerIdx].first == top);
 			vector<size_t>& currentOfferings = ret[peerIdx].second;
 
@@ -104,6 +106,7 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 			// Find the rarest they want that we have and haven't offered yet
 			for (const auto& offering : popularity) {
 				// See if they don't have it and it's not already in our offer list
+				assert(offering.first < top->chunkList.size());
 				if (!top->chunkList[offering.first] &&
 				    find(begin(currentOfferings), end(currentOfferings), offering.first) == end(currentOfferings)) {
 					// Offer a chunk!
