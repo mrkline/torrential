@@ -83,15 +83,17 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 		ret[i].first = interestedList[i].first;
 	}
 
+	size_t peerIdx = 0;
 	for (int offered = 0; offered < uploadRate; ++offered) {
 
 		bool gaveSomething = false;
 
-		// For each of our top four peers
-		for (size_t i = 0; i < topToSend && i < interestedList.size(); ++i) {
-			Peer* top = interestedList[i].first;
-			assert(ret[i].first == top);
-			vector<size_t>& currentOfferings = ret[i].second;
+		// Wrap around the peers we're sending to, finding something we can send
+		size_t startingPoint = peerIdx;
+		do {
+			Peer* top = interestedList[peerIdx].first;
+			assert(ret[peerIdx].first == top);
+			vector<size_t>& currentOfferings = ret[peerIdx].second;
 
 			if (top->hasEverything())
 				continue; // Take a hike
@@ -107,7 +109,13 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 					break;
 				}
 			}
-		}
+
+			peerIdx = (peerIdx + 1) % std::min(topToSend, interestedList.size());
+
+			if (gaveSomething)
+				break;
+
+		} while (peerIdx != startingPoint);
 
 		// If nobody wanted our stuff
 		if (!gaveSomething)
