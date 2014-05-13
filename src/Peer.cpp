@@ -70,9 +70,9 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 	}
 
 	// Popularity is now a list of chunks we have with their indices and how many peers have them.
-	// Let's sort that by most-to-least needed chunks.
+	// Let's sort by last-to-most popular chunks.
 	sort(begin(popularity), end(popularity), [](const pair<size_t, int>& a, const pair<size_t, int>& b) {
-		return a.second > b.second;
+		return a.second < b.second;
 	});
 
 	// Set up our return value
