@@ -83,7 +83,7 @@ void Simulator::connectPeers()
 			auto peerList = getRandomPeers(Peer::desiredPeerCount);
 			assert(it->interestedList.empty()); // This had better be empty
 			// Convert our Peer* list to a pair<Peer*, int> list
-			transform(begin(peerList), end(peerList), begin(it->interestedList),
+			transform(begin(peerList), end(peerList), back_inserter(it->interestedList),
 			          [](Peer* p) {
 				return pair<Peer*, int>(p, 0);
 			});
@@ -182,7 +182,7 @@ void Simulator::periodicTasks()
 			// We have to transform interestedLists's <Peer*, int> pairs
 			// into just Peer pointers.
 			vector<Peer*> alreadyHas;
-			transform(begin(p.interestedList), end(p.interestedList), begin(alreadyHas),
+			transform(begin(p.interestedList), end(p.interestedList), back_inserter(alreadyHas),
 			          [](const pair<Peer*, int>& pp) {
 				return pp.first;
 			});
@@ -192,7 +192,7 @@ void Simulator::periodicTasks()
 			vector<pair<Peer*, int>> newPairs;
 			newPairs.reserve(newPeers.size());
 
-			transform(begin(newPeers), end(newPeers), begin(newPairs), [](Peer* p) {
+			transform(begin(newPeers), end(newPeers), back_inserter(newPairs), [](Peer* p) {
 				return pair<Peer*, int>(p, 0);
 			});
 
