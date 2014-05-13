@@ -10,14 +10,14 @@ using namespace std;
 
 const size_t Peer::topToSend;
 
-Peer::Peer (int IP, int upload, int download) :
+Peer::Peer (int IP, int upload, int download, size_t numChunks) :
 	IPAddress(IP),
 	uploadRate(upload),
 	downloadRate(download),
+	chunkList(numChunks),
 	// These don't need to be in the list, but -WeffC++,
 	// which provides warnings based on Effective C++ (a famous book),
 	// recommends it.
-	chunkList(),
 	interestedList()
 {
 	// don't do anything, but it is cool

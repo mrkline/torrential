@@ -4,7 +4,7 @@
 
 using namespace std;
 
-Simulator::Simulator(size_t numClients) :
+Simulator::Simulator(size_t numClients, size_t numChunks) :
 	connected(numClients),
 	disconnected(numClients),
 	rng(random_device()()), // Seed the RNG with entropy from the system via random_device
@@ -20,12 +20,12 @@ Simulator::Simulator(size_t numClients) :
 	static int uid = 0;
 
 	// Start out with one seeder with all the file chunks
-	Peer* firstSeed = connected.construct(uid++, upload, download);
+	Peer* firstSeed = connected.construct(uid++, upload, download, numChunks);
 	fill(begin(firstSeed->chunkList), end(firstSeed->chunkList), true);
 
 	// Start out with everyone else with nothing
 	for (size_t i = 0; i < numClients - 1; ++i) {
-		disconnected.construct(uid++, upload, download);
+		disconnected.construct(uid++, upload, download, numChunks);
 	}
 }
 

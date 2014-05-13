@@ -7,7 +7,7 @@ int main()
 {
 	printf("Hello, ECE 537! Here goes nothing.\n");
 
-	Simulator ohGod(2);
+	Simulator ohGod(2, 30);
 
 	while (!ohGod.allDone())
 		ohGod.tick();

@@ -22,7 +22,7 @@ public:
 	/// Array of peers that this peer can request chunks from and how many chunks they've given us
 	std::vector<std::pair<Peer*, int>> interestedList;
 
-	Peer(int IP, int upload, int download);
+	Peer(int IP, int upload, int download, size_t numChunks);
 
 	Peer(Peer&&) = default; // Add a move constructor
 
