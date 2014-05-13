@@ -39,6 +39,13 @@ void Peer::onDisconnect()
 
 void Peer::reorderPeers()
 {
+	for (auto& item : interestedList) {
+		// Peers that have everything get the lowest possible contribution value (negative, even),
+		// so they will not appear at the top of our list.
+		if (item.first->hasEverything())
+			item.second = numeric_limits<decltype(item.second)>::min();
+	}
+
 	// Sort by most contributions first
 	sort(begin(interestedList), end(interestedList), [](const pair<Peer*, int>&a, const pair<Peer*, int>& b) {
 		return a.second > b.second;
