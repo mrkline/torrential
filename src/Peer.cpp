@@ -51,7 +51,9 @@ void Peer::reorderPeers()
 
 std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 {
-	assert(!interestedList.empty());
+	// Get out of here if we have nobody we are interested in
+	if (interestedList.empty())
+		return vector<pair<Peer*, vector<size_t>>>();
 
 	// Find the rarest chunks among our entire interested list
 	auto popularity = getChunkPopularity();
