@@ -59,7 +59,8 @@ Simulator::Simulator(size_t numClients, size_t numChunks) :
  */
 void Simulator::tick()
 {
-	printf("On tick %d:\n", tickNumber++);
+	// printf("On tick %d:\n", tickNumber++);
+	++tickNumber;
 	connectPeers();
 	periodicTasks();
 	bumpSimCount();
