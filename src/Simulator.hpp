@@ -19,8 +19,6 @@ private:
 
 	void connectPeers();
 
-	void disconnectPeers();
-
 	/**
 	 * Gets a map of all offers from one connected peer to another
 	 * \returns A map mapping dest -> a list of pairs in the form of (source, chunk indices)

@@ -9,7 +9,7 @@ Simulator::Simulator(size_t numClients) :
 	disconnected(numClients),
 	rng(random_device()()), // Seed the RNG with entropy from the system via random_device
 	shouldConnect(0.02), // Connect at a 2% rate. Feel free to play with this
-	shouldDisconnect(0.01) // Disconnect at a 1% rate. Feel free to play with this.
+	shouldDisconnect(0.8) // Disconnect at a 80% rate when done. Feel free to play with this.
 {
 	// Start out with one seeder with all the file chunks
 }
@@ -45,7 +45,6 @@ Simulator::Simulator(size_t numClients) :
 void Simulator::tick()
 {
 	connectPeers();
-	disconnectPeers();
 	bumpSimCount();
 }
 
@@ -73,66 +72,6 @@ void Simulator::connectPeers()
 		}
 		else
 			++it;
-	}
-}
-
-void Simulator::disconnectPeers()
-{
-	vector<Peer*> removing;
-
-	// Go through the connected peers, disconnecting some at random
-	for (auto it = begin(connected); it != end(connected);) {
-		if (shouldDisconnect(rng)) {
-
-			// See Peer::onDisconnect. Basically minimizing memory footprint when unused
-			it->onDisconnect();
-
-			// Why the hell are we dereferncing, then taking address of?
-			// Well, you see, it isn't a pointer, it's an iterator.
-			// Iterators act like pointers in that they return a reference
-			// when dereferenced with *, but they aren't actually pointers,
-			// they're their own classes.
-			// So, we get a refernce to a Peer with * and then get its address with &.
-			removing.emplace_back(&(*it));
-
-			// Move the peer to the disconnected list
-			connected.construct(std::move(*it));
-
-			it = connected.destroy(it);
-		}
-		else {
-			++it;
-		}
-	}
-
-	// Now that we've removed peers from the connected list,
-	// we have to remove their pointers from everyone's interest list
-	// because these pointers are no longer valid and are now pointing
-	// at unused memory inside the pool.
-
-	// For each peer in our connected list
-	for (Peer& cp : connected) {
-
-		// Keep track of the iterators to items we're going to remove
-		std::vector<decltype(cp.interestedList)::iterator> toRemove;
-
-		// Search through its interested list for the peers we removed
-		for (auto it = begin(cp.interestedList);
-		     it != end(cp.interestedList);
-		     // Ugly as sin, but use a lambda to compare the pointers in removing
-			 // to the pairs in each Peers' interestedList
-			 it = find_first_of(it, end(cp.interestedList), begin(removing), end(removing),
-			                    [] (pair<Peer*, int> pair, Peer* pointer) { return pair.first == pointer; })) {
-
-			toRemove.emplace_back(it);
-			++it; // on to the next one
-		}
-
-		// Remove them in reverse order (think about how vectors work)
-		for (auto it = toRemove.rbegin(); it != toRemove.rend(); ++it) {
-			// It's an iterator to an iterator. God help us all.
-			cp.interestedList.erase(*it);
-		}
 	}
 }
 
