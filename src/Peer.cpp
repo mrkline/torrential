@@ -50,27 +50,10 @@ void Peer::reorderPeers()
 
 std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 {
+	static const size_t topToSend = 5; // Send to the top 5
+
 	// Find the rarest chunks among our entire interested list
-
-	// Keeps track of how many of our connected peers (in interestList) have any given chunk
-	// The first item in the pair is the chunk index (because we'll reorder this later)
-	// The second item in the pair is how many peers have that chunk.
-	vector<pair<size_t, int>> popularity(chunkList.size());
-
-	for (size_t i = 0; i < chunkList.size(); ++i)
-		popularity[i].first = i;
-
-	// For each peer we're interested in sharing with
-	for (auto p : interestedList) {
-		const Peer* pp = p.first;
-		assert(pp->chunkList.size() == chunkList.size());
-
-		// Add their chunks to our count
-		for (size_t i = 0; i < chunkList.size(); ++i) {
-			if (pp->chunkList[i])
-				++popularity[i].second;
-		}
-	}
+	auto popularity = getChunkPopularity();
 
 	// Now that we have our counts, remove any that we don't have to offer
 	std::vector<size_t> toRemove; // indices of elements to remove from popularity
@@ -96,7 +79,7 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 	vector<pair<Peer*, vector<size_t>>> ret(min((size_t)4, interestedList.size()));
 
 	// Set up our peer pointers quick
-	for (size_t i = 0; i < 4 && i < interestedList.size(); ++i) {
+	for (size_t i = 0; i < topToSend && i < interestedList.size(); ++i) {
 		ret[i].first = interestedList[i].first;
 	}
 
@@ -105,7 +88,7 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 		bool gaveSomething = false;
 
 		// For each of our top four peers
-		for (size_t i = 0; i < 4 && i < interestedList.size(); ++i) {
+		for (size_t i = 0; i < topToSend && i < interestedList.size(); ++i) {
 			Peer* top = interestedList[i].first;
 			assert(ret[i].first == top);
 			vector<size_t>& currentOfferings = ret[i].second;
@@ -132,4 +115,29 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 	}
 
 	return ret;
+}
+
+std::vector<std::pair<size_t, int>> Peer::getChunkPopularity() const
+{
+	// Keeps track of how many of our connected peers (in interestList) have any given chunk
+	// The first item in the pair is the chunk index (because we'll reorder this later)
+	// The second item in the pair is how many peers have that chunk.
+	vector<pair<size_t, int>> popularity(chunkList.size());
+
+	for (size_t i = 0; i < chunkList.size(); ++i)
+		popularity[i].first = i;
+
+	// For each peer we're interested in sharing with
+	for (auto p : interestedList) {
+		const Peer* pp = p.first;
+		assert(pp->chunkList.size() == chunkList.size());
+
+		// Add their chunks to our count
+		for (size_t i = 0; i < chunkList.size(); ++i) {
+			if (pp->chunkList[i])
+				++popularity[i].second;
+		}
+	}
+
+	return popularity;
 }

@@ -40,4 +40,8 @@ public:
 	 *          and the second item is a list of indices of the chunks
 	 */
 	std::vector<std::pair<Peer*, std::vector<size_t>>> makeOffers() const;
+
+private:
+
+	std::vector<std::pair<size_t, int>> getChunkPopularity() const;
 };
