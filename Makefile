@@ -53,6 +53,6 @@ torrential: $(OBJS) src/main.o
 
 # remove compilation products
 clean:
-	rm -f tests/*.o common/*.o *.o *.gch *.d unit_tests* torrential*
+	rm -f tests/*.o src/*.o *.o *.gch *.d unit_tests* torrential*
 
 .PHONY: clean debug release
