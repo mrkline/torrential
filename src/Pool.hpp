@@ -8,7 +8,6 @@
 #include <utility>
 #include <type_traits>
 #include <queue>
-#include <utility> // For rel_ops
 
 // Forward declaration (this comes after the pool itself)
 template <typename T>
@@ -17,13 +16,6 @@ class PoolAllocator;
 // Forward declaration (this comes after the pool itself)
 template <typename T>
 class PoolIterator;
-
-
-// Provides !=, >, <=, >=, etc.
-// Usually a "using namespace" statement in a header is a capital sin
-// (since anyone including this header is now using this namespace without asking),
-// but non-template functions override template ones, so this shouldn't be a problem.
-using namespace std::rel_ops;
 
 /**
  * \brief Provides a pool of memory from which a given type can be allocated
@@ -545,6 +537,11 @@ public:
 	bool operator==(const PoolIterator& o) const
 	{
 		return current == o.current;
+	}
+
+	bool operator!=(const PoolIterator& o) const
+	{
+		return !operator==(o);
 	}
 
 	/// Comparison operator, needed for all forward iterators
