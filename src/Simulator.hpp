@@ -11,6 +11,9 @@
 class Simulator {
 public:
 
+	/// A map that maps dest -> a list of pairs in the form of (source, chunk indices)
+	typedef std::unordered_map<Peer*, std::vector<std::pair<Peer*, std::vector<size_t>>>> OfferMap;
+
 	Simulator(size_t numClients);
 
 	void tick();
@@ -23,7 +26,9 @@ private:
 	 * Gets a map of all offers from one connected peer to another
 	 * \returns A map mapping dest -> a list of pairs in the form of (source, chunk indices)
 	 */
-	std::unordered_map<Peer*, std::vector<std::pair<Peer*, std::vector<size_t>>>> makeOffers();
+	OfferMap makeOffers();
+	
+	void acceptOffers(OfferMap& offers);
 
 	void bumpSimCount();
 

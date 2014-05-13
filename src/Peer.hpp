@@ -41,6 +41,8 @@ public:
 	 */
 	std::vector<std::pair<Peer*, std::vector<size_t>>> makeOffers() const;
 
+	void acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offers);
+
 private:
 
 	std::vector<std::pair<size_t, int>> getChunkPopularity() const;

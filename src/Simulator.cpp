@@ -116,9 +116,9 @@ std::vector<Peer*> Simulator::getRandomPeers(size_t num,
 	return ret;
 }
 
-std::unordered_map<Peer*, std::vector<std::pair<Peer*, std::vector<size_t>>>> Simulator::makeOffers()
+Simulator::OfferMap Simulator::makeOffers()
 {
-	unordered_map<Peer*, vector<pair<Peer*, vector<size_t>>>> ret;
+	OfferMap ret;
 
 	for (Peer& p : connected) {
 		auto offers = p.makeOffers();
@@ -128,6 +128,18 @@ std::unordered_map<Peer*, std::vector<std::pair<Peer*, std::vector<size_t>>>> Si
 	}
 
 	return ret;
+}
+
+void Simulator::acceptOffers(OfferMap& offers)
+{
+	for (Peer& p : connected) {
+		auto it = offers.find(&p);
+		if (it == end(offers))
+			continue;
+
+		// If it's in the list, carry on.
+		p.acceptOffers(it->second);
+	}
 }
 
 void Simulator::bumpSimCount()

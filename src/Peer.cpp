@@ -149,3 +149,58 @@ std::vector<std::pair<size_t, int>> Peer::getChunkPopularity() const
 
 	return popularity;
 }
+
+void Peer::acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offers)
+{
+	// Sanity check: We should only be getting offers for things we don't have
+	for (auto& offerSet : offers) {
+		for (size_t offer : offerSet.second)
+			assert(!chunkList[offer]);
+	}
+
+	auto popularity = getChunkPopularity();
+
+	// Coalesce our offers into one big list
+	struct Offer {
+		Peer* from;
+		size_t chunkIdx;
+
+		Offer(Peer* f, size_t idx) : from(f), chunkIdx(idx) { }
+	};
+
+	vector<Offer> allOffers;
+
+	for (auto& offerSet : offers) {
+		for (size_t offer : offerSet.second)
+			allOffers.emplace_back(offerSet.first, offer);
+	}
+	// We can free up the offers vector. We're all done with it.
+	// TODO: Should we do this? Could be shooting ourselves in the foot
+	//       if we forget later. Oh well.
+	offers.clear();
+	offers.shrink_to_fit();
+
+	// Lets's sort all of our offers by how popular they are
+	sort(begin(allOffers), end(allOffers), [&] (const Offer& a, const Offer& b) {
+		return popularity[a.chunkIdx].second < popularity[b.chunkIdx].second;
+	});
+
+	for (int downloaded = 0; downloaded < downloadRate && downloaded < (int)allOffers.size(); ++downloaded) {
+
+		const Offer& accepting = allOffers[downloaded]; // The offer we're accepting
+
+		printf("Accepting chunk %zu from peer %d%s", accepting.chunkIdx, accepting.from->IPAddress,
+		       chunkList[accepting.chunkIdx] ? " (duplicate)" : "");
+
+		chunkList[accepting.chunkIdx] = true;
+
+		// See if this peer sending us stuff is in our interested list
+		auto it = find_if(begin(interestedList), end(interestedList), [&](const pair<Peer*, int>& peer) {
+			return peer.first == accepting.from;
+		});
+
+		// If he is, bump the count of things he's sent us.
+		if (it != end(interestedList))
+			++it->second;
+	}
+}
