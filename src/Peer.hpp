@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <random>
 
 class Peer {
 public:
@@ -34,6 +35,30 @@ public:
 	void reorderPeers();
 
 	/**
+	 * \brief Optimistically unchoke a random peer
+	 *
+	 * We'll unchoke by picking a random guy and sticking him in the fifth slot
+	 */
+	template <typename RNG>
+	void randomUnchoke(RNG& gen)
+	{
+		// If our interested list is tiny enough that we're always
+		// offering to everyone, we don't need to do anything.
+		// This probably won't happen, but meh. Why not check?
+		if (interestedList.size() <= topToSend)
+			return;
+
+		static const auto unchokedPosition = topToSend - 1;
+
+		// Pick someone to unchoke
+		std::uniform_int_distribution<size_t> unchoker(unchokedPosition, interestedList.size() - 1);
+		size_t idxToUnchoke = unchoker(gen);
+
+		// Swap him with our currently unchoked peer
+		swap(interestedList[unchokedPosition], interestedList[idxToUnchoke]);
+	}
+
+	/**
 	 * \brief Returns a list of offers to peers from our interestedList
 	 * \returns The offers in the form of pairs.
 	 *          The first item in the pair is the peer we are offering to,
@@ -44,6 +69,8 @@ public:
 	void acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offers);
 
 private:
+
+	static const size_t topToSend = 5; // Send to the top 5 peers (4 + 1 optimistically unchoked)
 
 	std::vector<std::pair<size_t, int>> getChunkPopularity() const;
 };

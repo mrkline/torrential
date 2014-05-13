@@ -45,7 +45,10 @@ Simulator::Simulator(size_t numClients) :
 void Simulator::tick()
 {
 	connectPeers();
+	periodicTasks();
 	bumpSimCount();
+	auto offers = makeOffers();
+	acceptOffers(offers);
 }
 
 void Simulator::connectPeers()
@@ -146,4 +149,41 @@ void Simulator::bumpSimCount()
 {
 	for (Peer& p : connected)
 		++p.simCounter;
+}
+
+void Simulator::periodicTasks()
+{
+	for (Peer& p : connected) {
+		// If we have less than 20 peers, get some more
+		if (p.interestedList.size() < 20) {
+			// First we need to get a list of peers we already have.
+			// Time for our best friend, std::transform again!
+			// We have to transform interestedLists's <Peer*, int> pairs
+			// into just Peer pointers.
+			vector<Peer*> alreadyHas;
+			transform(begin(p.interestedList), end(p.interestedList), begin(alreadyHas),
+			          [](const pair<Peer*, int>& pp) {
+				return pp.first;
+			});
+
+			auto newPeers = getRandomPeers(Peer::desiredPeerCount, alreadyHas);
+
+			vector<pair<Peer*, int>> newPairs;
+			newPairs.reserve(newPeers.size());
+
+			transform(begin(newPeers), end(newPeers), begin(newPairs), [](Peer* p) {
+				return pair<Peer*, int>(p, 0);
+			});
+
+			p.interestedList.insert(end(p.interestedList), begin(newPairs), end(newPairs));
+		}
+
+		// Every 10 ticks, re-evaluate top four
+		if (p.simCounter % 10 == 0)
+			p.reorderPeers();
+
+		// Every 30 ticks, optimistically unchoke a random peer
+		if (p.simCounter % 30 == 0)
+			p.randomUnchoke(rng);
+	}
 }

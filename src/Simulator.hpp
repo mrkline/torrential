@@ -32,6 +32,8 @@ private:
 
 	void bumpSimCount();
 
+	void periodicTasks();
+
 	std::vector<Peer*> getRandomPeers(size_t num,
 	                                  const std::vector<Peer*>& ignore = std::vector<Peer*>());
 

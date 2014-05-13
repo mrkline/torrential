@@ -8,6 +8,8 @@
 
 using namespace std;
 
+const size_t Peer::topToSend;
+
 Peer::Peer (int IP, int upload, int download) :
 	IPAddress(IP),
 	uploadRate(upload),
@@ -47,10 +49,9 @@ void Peer::reorderPeers()
 		p.second = 0;
 }
 
-
 std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 {
-	static const size_t topToSend = 5; // Send to the top 5
+	assert(!interestedList.empty());
 
 	// Find the rarest chunks among our entire interested list
 	auto popularity = getChunkPopularity();
