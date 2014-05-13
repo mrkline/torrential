@@ -80,7 +80,8 @@ void Simulator::connectPeers()
 			// Initialize it
 			it->simCounter = 0; // sim counter gets reset
 			// Get us some peers
-			auto peerList = getRandomPeers(Peer::desiredPeerCount);
+			// We are not interested in ourselves
+			auto peerList = getRandomPeers(Peer::desiredPeerCount, {&(*it)});
 			assert(it->interestedList.empty()); // This had better be empty
 			// Convert our Peer* list to a pair<Peer*, int> list
 			transform(begin(peerList), end(peerList), back_inserter(it->interestedList),
@@ -186,6 +187,8 @@ void Simulator::periodicTasks()
 			          [](const pair<Peer*, int>& pp) {
 				return pp.first;
 			});
+
+			alreadyHas.emplace_back(&p); // We are not interested in ourselves
 
 			auto newPeers = getRandomPeers(Peer::desiredPeerCount, alreadyHas);
 
