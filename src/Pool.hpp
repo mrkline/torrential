@@ -105,21 +105,13 @@ public:
 
 	/**
 	 * \brief Destructor
-	 * \pre All slots in the pool have been freed
-	 * \warning If all slots have not been freed by the time this is called,
-	 *          std::terminate is called.
-	 *          In the author's opinion, this is much better than soldiering on
-	 *          in some undefined state with dangling pointers.
+	 *
+	 * We don't particularly care if all of the slots have been freed -
+	 * maybe the pointers we handed out weren't used and this is just being used as a normal container.
+	 * Freeing the buffer will release all of our memory, anyways, so go ahead.
 	 */
 	~Pool()
 	{
-		// If everything isn't free, we're in undefined territory.
-		// Give up!
-		if (firstFree != buff || size() != 0) {
-			fprintf(stderr, "A pool was destroyed before its elements were freed.\n");
-			std::terminate();
-		}
-
 		free(buff);
 	}
 
