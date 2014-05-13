@@ -18,6 +18,9 @@ public:
 
 	void tick();
 
+	// Returns true when all peers have all the chunks
+	bool allDone() const;
+
 private:
 
 	void connectPeers();

@@ -11,7 +11,22 @@ Simulator::Simulator(size_t numClients) :
 	shouldConnect(0.02), // Connect at a 2% rate. Feel free to play with this
 	shouldDisconnect(0.8) // Disconnect at a 80% rate when done. Feel free to play with this.
 {
+	assert(numClients > 1); // Don't be stupid.
+
+	// Change up these values later, but for now, they can stay constant
+	static const int upload = 10;
+	static const int download = upload * 10;
+
+	static int uid = 0;
+
 	// Start out with one seeder with all the file chunks
+	Peer* firstSeed = connected.construct(uid++, upload, download);
+	fill(begin(firstSeed->chunkList), end(firstSeed->chunkList), true);
+
+	// Start out with everyone else with nothing
+	for (size_t i = 0; i < numClients - 1; ++i) {
+		disconnected.construct(uid++, upload, download);
+	}
 }
 
 /**
@@ -49,6 +64,12 @@ void Simulator::tick()
 	bumpSimCount();
 	auto offers = makeOffers();
 	acceptOffers(offers);
+}
+
+bool Simulator::allDone() const
+{
+	return all_of(begin(connected), end(connected), [](const Peer& p) { return p.hasEverything(); })
+		&& all_of(begin(disconnected), end(disconnected), [](const Peer& p) { return p.hasEverything(); });
 }
 
 void Simulator::connectPeers()
