@@ -43,6 +43,8 @@ private:
 	Pool<Peer> connected; ///< The clients who are currently connected
 	Pool<Peer> disconnected; ///< The clients who are currently disconnected
 
+	int tickNumber = 0;
+
 	// C++11 random number magic. See
 	// http://en.cppreference.com/w/cpp/numeric/random
 
