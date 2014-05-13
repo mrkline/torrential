@@ -99,7 +99,7 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 			vector<size_t>& currentOfferings = ret[peerIdx].second;
 
 			if (top->hasEverything())
-				continue; // Take a hike
+				goto nextPeer; // Take a hike
 
 			// Find the rarest they want that we have and haven't offered yet
 			for (const auto& offering : popularity) {
@@ -113,6 +113,7 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 				}
 			}
 
+nextPeer:
 			peerIdx = (peerIdx + 1) % std::min(topToSend, interestedList.size());
 
 			if (gaveSomething)
@@ -192,7 +193,7 @@ void Peer::acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offe
 
 		const Offer& accepting = allOffers[downloaded]; // The offer we're accepting
 
-		printf("Accepting chunk %zu from peer %d%s\n", accepting.chunkIdx, accepting.from->IPAddress,
+		printf("Peer %d accepting chunk %zu from peer %d%s\n", IPAddress, accepting.chunkIdx, accepting.from->IPAddress,
 		       chunkList[accepting.chunkIdx] ? " (duplicate)" : "");
 
 		chunkList[accepting.chunkIdx] = true;
