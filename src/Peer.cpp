@@ -192,7 +192,7 @@ void Peer::acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offe
 
 		const Offer& accepting = allOffers[downloaded]; // The offer we're accepting
 
-		printf("Accepting chunk %zu from peer %d%s", accepting.chunkIdx, accepting.from->IPAddress,
+		printf("Accepting chunk %zu from peer %d%s\n", accepting.chunkIdx, accepting.from->IPAddress,
 		       chunkList[accepting.chunkIdx] ? " (duplicate)" : "");
 
 		chunkList[accepting.chunkIdx] = true;
