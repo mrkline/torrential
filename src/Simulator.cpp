@@ -212,5 +212,45 @@ void Simulator::periodicTasks()
 		// Every 30 ticks, optimistically unchoke a random peer
 		if (p.simCounter % 30 == 0)
 			p.randomUnchoke(rng);
+
+		// Every so often, churn it up.
+		// Chuck out peers we can't help and replace them with new random guys
+		// This is important, and prevents us from getting "stuck" where everyone in your list
+		// already has the chunks you are offering.
+		if (p.simCounter % 120 == 0) {
+
+			// Don't get any peers we already have
+			vector<Peer*> alreadyHas;
+			transform(begin(p.interestedList), end(p.interestedList), back_inserter(alreadyHas),
+			          [](const pair<Peer*, int>& pp) {
+				return pp.first;
+			});
+
+			alreadyHas.emplace_back(&p);
+
+
+			// Find peers we can't help anymore
+			vector<decltype(p.interestedList)::iterator> cannotHelp;
+			for (auto it = begin(p.interestedList); it != end(p.interestedList); ++it) {
+				if (!p.hasSomethingFor(*it->first))
+					cannotHelp.emplace_back(it);
+			}
+
+			// Remove the peers we can't help
+			for (auto it = cannotHelp.rbegin(); it != cannotHelp.rend(); ++it)
+				p.interestedList.erase(*it);
+
+			assert(Peer::desiredPeerCount > p.interestedList.size());
+			auto newPeers = getRandomPeers(Peer::desiredPeerCount - p.interestedList.size(), alreadyHas);
+
+			vector<pair<Peer*, int>> newPairs;
+			newPairs.reserve(newPeers.size());
+
+			transform(begin(newPeers), end(newPeers), back_inserter(newPairs), [](Peer* p) {
+				return pair<Peer*, int>(p, 0);
+			});
+
+			p.interestedList.insert(end(p.interestedList), begin(newPairs), end(newPairs));
+		}
 	}
 }

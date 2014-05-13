@@ -56,6 +56,18 @@ void Peer::reorderPeers()
 		p.second = 0;
 }
 
+bool Peer::hasSomethingFor(const Peer& other) const
+{
+	assert(chunkList.size() == other.chunkList.size());
+	for (size_t i = 0; i < chunkList.size(); ++i) {
+		// If we have a chunk they don't, return true
+		if (chunkList[i] && !other.chunkList[i])
+			return true;
+	}
+
+	return false;
+}
+
 std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 {
 	// Get out of here if we have nobody we are interested in

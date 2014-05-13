@@ -34,6 +34,8 @@ public:
 	/// Order peers based on who gave us the most, then reset the counts
 	void reorderPeers();
 
+	bool hasSomethingFor(const Peer& other) const;
+
 	/**
 	 * \brief Optimistically unchoke a random peer
 	 *

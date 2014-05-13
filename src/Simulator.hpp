@@ -30,7 +30,7 @@ private:
 	 * \returns A map mapping dest -> a list of pairs in the form of (source, chunk indices)
 	 */
 	OfferMap makeOffers();
-	
+
 	void acceptOffers(OfferMap& offers);
 
 	void bumpSimCount();
