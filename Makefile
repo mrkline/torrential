@@ -12,9 +12,11 @@ unit_tests: CXXFLAGS += -I. -Isrc -Itests -g
 unit_tests: $(OBJS) $(TESTOBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) $(TESTOBJS) $(LIBFLAGS) -o unit_tests
 
-# debug: CXXFLAGS += -g
+debug: CXXFLAGS += -g
+debug: torrential
 
-# release: CXXFLAGS+= -O2 -DNDEBUG
+release: CXXFLAGS+= -O2 -DNDEBUG
+release: torrential
 
 # link
 torrential: $(OBJS) src/main.o
