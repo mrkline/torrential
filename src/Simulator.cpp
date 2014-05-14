@@ -121,14 +121,18 @@ std::vector<Peer*> Simulator::getRandomPeers(size_t num,
 		vector<Peer*> peerList;
 		peerList.reserve(connected.size());
 
-		for (Peer& connectedPeer : connected)
-			peerList.emplace_back(&connectedPeer);
+		for (Peer& connectedPeer : connected) {
+			// Ignore those that have everything
+			if (!connectedPeer.hasEverything())
+				peerList.emplace_back(&connectedPeer);
+		}
 
 		// Shuffle that pointer list
 		shuffle(begin(peerList), end(peerList), rng);
 
 		// Only take the first num pointers
-		peerList.resize(num);
+		if (peerList.size() > num)
+			peerList.resize(num);
 
 		ret = move(peerList);
 	}
