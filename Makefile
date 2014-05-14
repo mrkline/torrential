@@ -18,7 +18,7 @@ unit_tests: $(OBJS) $(TESTOBJS)
 debug: CXXFLAGS += -g
 debug: torrential
 
-release: CXXFLAGS+= -O2 -DNDEBUG
+release: CXXFLAGS+= -O2 -flto -DNDEBUG
 release: torrential
 
 # link
