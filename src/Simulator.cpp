@@ -22,8 +22,11 @@ Simulator::Simulator(size_t numClients, size_t numChunks, double joinProbability
 
 	static int uid = 0;
 
+	printTick(0);
+
 	// Start out with one seeder with all the file chunks
-	connected.construct(uid++, upload(rng), download(rng), numChunks, true);
+	auto seeder = connected.construct(uid++, upload(rng), download(rng), numChunks, true);
+	printConnection(*seeder);
 
 	// Start out with everyone else with nothing
 	for (size_t i = 0; i < numClients - 1 - freeriders; ++i)
