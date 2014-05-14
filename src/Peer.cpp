@@ -211,14 +211,10 @@ void Peer::acceptOffers()
 	if (consideredOffers.empty())
 		return;
 
-	for (int downloaded = 0; downloaded < downloadRate && downloaded < (int)consideredOffers.size(); ++downloaded) {
+	int downloaded = 0;
+	for (size_t offerIdx = 0; downloaded < downloadRate && offerIdx < consideredOffers.size(); ++offerIdx) {
 
-		const Offer& accepting = consideredOffers[downloaded]; // The offer we're accepting
-
-		printf("Peer %d accepting chunk %zu from peer %d%s\n", IPAddress, accepting.chunkIdx, accepting.from->IPAddress,
-		       chunkList[accepting.chunkIdx] ? " (duplicate)" : "");
-
-		chunkList[accepting.chunkIdx] = true;
+		const Offer& accepting = consideredOffers[offerIdx]; // The offer we're accepting
 
 		// See if this peer sending us stuff is in our interested list
 		auto it = find_if(begin(interestedList), end(interestedList), [&](const pair<Peer*, int>& peer) {
@@ -226,8 +222,20 @@ void Peer::acceptOffers()
 		});
 
 		// If he is, bump the count of things he's sent us.
+		// Even if it's a duplicate, they tried.
 		if (it != end(interestedList))
 			++it->second;
+
+		// If we have this chunk already, don't waste a download slot
+		if (chunkList[accepting.chunkIdx])
+			continue;
+
+		printf("Peer %d accepting chunk %zu from peer %d\n", IPAddress, accepting.chunkIdx, accepting.from->IPAddress);
+
+		chunkList[accepting.chunkIdx] = true;
+
+		// Increment the chunks we downloaded
+		++downloaded;
 	}
 
 	done = all_of(begin(chunkList), end(chunkList), [](bool b) { return b; });
