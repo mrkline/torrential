@@ -148,11 +148,11 @@ std::vector<Peer*> Simulator::getRandomPeers(size_t num,
 	return ret;
 }
 
-Simulator::OfferMap Simulator::makeOffers()
+Simulator::OfferMap Simulator::makeOffers() const
 {
 	OfferMap ret;
 
-	for (Peer& p : connected) {
+	for (const Peer& p : connected) {
 		auto offers = p.makeOffers();
 		for (auto& offer : offers) {
 			ret[offer.first].emplace_back(&p, offer.second);

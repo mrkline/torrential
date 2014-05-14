@@ -176,7 +176,7 @@ std::vector<std::pair<size_t, int>> Peer::getChunkPopularity() const
 	return popularity;
 }
 
-void Peer::acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offers)
+void Peer::acceptOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>& offers)
 {
 	// Sanity check: We should only be getting offers for things we don't have
 #ifndef NDEBUG
@@ -190,10 +190,10 @@ void Peer::acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offe
 
 	// Coalesce our offers into one big list
 	struct Offer {
-		Peer* from;
+		const Peer* from;
 		size_t chunkIdx;
 
-		Offer(Peer* f, size_t idx) : from(f), chunkIdx(idx) { }
+		Offer(const Peer* f, size_t idx) : from(f), chunkIdx(idx) { }
 	};
 
 	vector<Offer> allOffers;

@@ -68,7 +68,7 @@ public:
 	 */
 	std::vector<std::pair<Peer*, std::vector<size_t>>> makeOffers() const;
 
-	void acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offers);
+	void acceptOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>& offers);
 
 private:
 
