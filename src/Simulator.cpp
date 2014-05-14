@@ -234,7 +234,8 @@ void Simulator::periodicTasks()
 
 			alreadyHas.emplace_back(&p); // We are not interested in ourselves
 
-			auto newPeers = getRandomPeers(Peer::desiredPeerCount, alreadyHas);
+			assert(Peer::desiredPeerCount > alreadyHas.size());
+			auto newPeers = getRandomPeers(Peer::desiredPeerCount - alreadyHas.size(), alreadyHas);
 
 			vector<pair<Peer*, int>> newPairs;
 			newPairs.reserve(newPeers.size());
@@ -243,6 +244,7 @@ void Simulator::periodicTasks()
 				return pair<Peer*, int>(p, 0);
 			});
 
+			assert(Peer::desiredPeerCount >= p.interestedList.size() + newPairs.size());
 			p.interestedList.insert(end(p.interestedList), begin(newPairs), end(newPairs));
 		}
 
