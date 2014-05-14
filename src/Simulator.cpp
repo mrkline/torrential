@@ -6,7 +6,8 @@
 
 using namespace std;
 
-Simulator::Simulator(size_t numClients, size_t numChunks, double joinProbability, double leaveProbability) :
+Simulator::Simulator(size_t numClients, size_t numChunks, double joinProbability, double leaveProbability,
+                     std::pair<int, int> uploadRange, std::pair<int, int> downloadRange) :
 	connected(numClients),
 	disconnected(numClients),
 	rng(random_device()()), // Seed the RNG with entropy from the system via random_device
@@ -15,18 +16,17 @@ Simulator::Simulator(size_t numClients, size_t numChunks, double joinProbability
 {
 	assert(numClients > 1); // Don't be stupid.
 
-	// Change up these values later, but for now, they can stay constant
-	static const int upload = 10;
-	static const int download = upload * 10;
+	uniform_int_distribution<int> upload(uploadRange.first, uploadRange.second);
+	uniform_int_distribution<int> download(downloadRange.first, downloadRange.second);
 
 	static int uid = 0;
 
 	// Start out with one seeder with all the file chunks
-	connected.construct(uid++, upload, download, numChunks, true);
+	connected.construct(uid++, upload(rng), download(rng), numChunks, true);
 
 	// Start out with everyone else with nothing
 	for (size_t i = 0; i < numClients - 1; ++i) {
-		disconnected.construct(uid++, upload, download, numChunks, false);
+		disconnected.construct(uid++, upload(rng), download(rng), numChunks, false);
 	}
 }
 
