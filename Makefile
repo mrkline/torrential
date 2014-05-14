@@ -23,7 +23,7 @@ debug: torrential
 release: CXXFLAGS+= $(OPTIMIZATIONS)
 release: torrential
 
-profile: CXXFLAGS += $(OPTIMIZATIONS) -pg
+profile: CXXFLAGS += $(OPTIMIZATIONS) -pg -g
 profile: torrential
 
 # link
