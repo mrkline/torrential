@@ -15,7 +15,7 @@ public:
 	typedef std::unordered_map<Peer*, std::vector<std::pair<Peer*, std::vector<size_t>>>> OfferMap;
 
 	Simulator(size_t numClients, size_t numChunks, double joinProbability, double leaveProbability,
-	          std::pair<int, int> uploadRange, std::pair<int, int> downloadRange);
+	          std::pair<int, int> uploadRange, std::pair<int, int> downloadRange, size_t freeriders);
 
 	void tick();
 

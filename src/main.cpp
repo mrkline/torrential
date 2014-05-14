@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
 	ValueArg<int> peerArg("p", "peers", "Peers in the simulation", true, 50, "number of peers");
 	ValueArg<int> chunkArg("c", "chunks", "Chunks in the complete torrent", true, 50, "number of chunks");
-	ValueArg<double> joinProbArg("j", "join-probab", "The probability a peer will join in a given tick",
+	ValueArg<double> joinProbArg("j", "join-prob", "The probability a peer will join in a given tick",
 	                             false, 0.2, "join probability");
 	ValueArg<double> leaveProbArg("l", "leave-prob", "The probability that a peer will leave in a given tick",
 	                              false, 0.01, "leave probability");
@@ -48,6 +48,7 @@ int main(int argc, char** argv)
 	                                  false, pair<int, int>(10, 10), "min,max");
 	ValueArg<pair<int, int>> downloadArg("d", "download-range", "The range (in chunks) of download rates for each peer",
 	                                     false, pair<int, int>(100, 100), "min,max");
+	ValueArg<int> freeriderArg("f", "freeriders", "The number of free riders", false, 0, "number of free riders");
 
 	cmd.add(peerArg);
 	cmd.add(chunkArg);
@@ -55,6 +56,7 @@ int main(int argc, char** argv)
 	cmd.add(leaveProbArg);
 	cmd.add(uploadArg);
 	cmd.add(downloadArg);
+	cmd.add(freeriderArg);
 	cmd.parse(argc, argv);
 
 	const auto peers = peerArg.getValue();
@@ -63,6 +65,7 @@ int main(int argc, char** argv)
 	const auto leaveProb = leaveProbArg.getValue();
 	const auto upload = uploadArg.getValue();
 	const auto download = downloadArg.getValue();
+	const auto frees = freeriderArg.getValue();
 
 	if (peers < 2)
 		howAboutNo("You cannot have fewer than two peers.");
@@ -87,7 +90,13 @@ int main(int argc, char** argv)
 	if (download.first > download.second)
 		howAboutNo("Download min cannot be greater than the download max");
 
-	Simulator sim(peers, chunks, joinProb, leaveProb, upload, download);
+	if (frees < 0)
+		howAboutNo("You cannot have a negative number of free riders.");
+
+	if (peers - frees < 1)
+		howAboutNo("At least one peer cannot be a free rider");
+
+	Simulator sim(peers, chunks, joinProb, leaveProb, upload, download, frees);
 
 	while (!sim.allDone())
 		sim.tick();

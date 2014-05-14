@@ -7,7 +7,7 @@
 using namespace std;
 
 Simulator::Simulator(size_t numClients, size_t numChunks, double joinProbability, double leaveProbability,
-                     std::pair<int, int> uploadRange, std::pair<int, int> downloadRange) :
+                     std::pair<int, int> uploadRange, std::pair<int, int> downloadRange, size_t freeriders) :
 	connected(numClients),
 	disconnected(numClients),
 	rng(random_device()()), // Seed the RNG with entropy from the system via random_device
@@ -25,9 +25,11 @@ Simulator::Simulator(size_t numClients, size_t numChunks, double joinProbability
 	connected.construct(uid++, upload(rng), download(rng), numChunks, true);
 
 	// Start out with everyone else with nothing
-	for (size_t i = 0; i < numClients - 1; ++i) {
+	for (size_t i = 0; i < numClients - 1 - freeriders; ++i)
 		disconnected.construct(uid++, upload(rng), download(rng), numChunks, false);
-	}
+	// Add our freeriders in at the end
+	for (size_t i = 0; i < freeriders; ++i)
+		disconnected.construct(uid++, 0, download(rng), numChunks, false);
 }
 
 /**

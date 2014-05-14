@@ -84,7 +84,7 @@ bool Peer::hasSomethingFor(const Peer& other) const
 std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers()
 {
 	// Get out of here if we have nobody we are interested in
-	if (interestedList.empty())
+	if (interestedList.empty() || uploadRate == 0)
 		return vector<pair<Peer*, vector<size_t>>>();
 
 	// Find the rarest chunks among our entire interested list
