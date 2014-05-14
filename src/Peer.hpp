@@ -22,11 +22,11 @@ public:
 	/// Array of peers that this peer can request chunks from and how many chunks they've given us
 	std::vector<std::pair<Peer*, int>> interestedList;
 
-	Peer(int IP, int upload, int download, size_t numChunks);
+	Peer(int IP, int upload, int download, size_t numChunks, bool isSeed);
 
 	Peer(Peer&&) = default; // Add a move constructor
 
-	bool hasEverything() const;
+	bool hasEverything() const { return done; }
 
 	/// Called as the peer disconnects to minimize memory footprint when not in use
 	void onDisconnect();
@@ -86,5 +86,7 @@ private:
 	std::vector<Offer> consideredOffers;
 
 	std::vector<std::pair<size_t, int>> getChunkPopularity() const;
+
+	bool done;
 
 };

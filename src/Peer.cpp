@@ -10,7 +10,7 @@ using namespace std;
 
 const size_t Peer::topToSend;
 
-Peer::Peer (int IP, int upload, int download, size_t numChunks) :
+Peer::Peer (int IP, int upload, int download, size_t numChunks, bool isSeed) :
 	IPAddress(IP),
 	uploadRate(upload),
 	downloadRate(download),
@@ -19,15 +19,12 @@ Peer::Peer (int IP, int upload, int download, size_t numChunks) :
 	// which provides warnings based on Effective C++ (a famous book),
 	// recommends it.
 	interestedList(),
-	consideredOffers()
+	consideredOffers(),
+	done(isSeed)
 {
-	// don't do anything, but it is cool
-}
-
-bool Peer::hasEverything() const
-{
-	// In the future, we could cache this value, but for now let's focus on correctness
-	return all_of(begin(chunkList), end(chunkList), [](bool b) { return b; });
+	// If we're the seed, fill our chunkList
+	if (isSeed)
+		fill(begin(chunkList), end(chunkList), true);
 }
 
 void Peer::onDisconnect()
@@ -232,6 +229,8 @@ void Peer::acceptOffers()
 		if (it != end(interestedList))
 			++it->second;
 	}
+
+	done = all_of(begin(chunkList), end(chunkList), [](bool b) { return b; });
 
 	// We're done with the considered offers
 	consideredOffers.clear();

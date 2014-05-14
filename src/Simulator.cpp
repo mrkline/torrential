@@ -22,12 +22,11 @@ Simulator::Simulator(size_t numClients, size_t numChunks) :
 	static int uid = 0;
 
 	// Start out with one seeder with all the file chunks
-	Peer* firstSeed = connected.construct(uid++, upload, download, numChunks);
-	fill(begin(firstSeed->chunkList), end(firstSeed->chunkList), true);
+	connected.construct(uid++, upload, download, numChunks, true);
 
 	// Start out with everyone else with nothing
 	for (size_t i = 0; i < numClients - 1; ++i) {
-		disconnected.construct(uid++, upload, download, numChunks);
+		disconnected.construct(uid++, upload, download, numChunks, false);
 	}
 }
 
