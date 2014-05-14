@@ -40,9 +40,9 @@ void Peer::onDisconnect()
 void Peer::reorderPeers()
 {
 	for (auto& item : interestedList) {
-		// Peers that have everything get the lowest possible contribution value (negative, even),
+		// Peers that we can't help get the lowest possible contribution value (negative, even),
 		// so they will not appear at the top of our list.
-		if (item.first->hasEverything())
+		if (!hasSomethingFor(*item.first))
 			item.second = numeric_limits<decltype(item.second)>::min();
 	}
 
