@@ -2,6 +2,8 @@
 
 #include <cstdio>
 
+#include "Peer.hpp"
+
 namespace {
 
 bool machineOutput = false;
@@ -21,12 +23,12 @@ void printTick(int tickNum)
 	printf("t %d\n", tickNum);
 }
 
-void printConnection(int id)
+void printConnection(const Peer& p)
 {
 	if (machineOutput)
-		printf("c %d\n", id);
+		printf("c %d %d %d\n", p.IPAddress, p.uploadRate, p.downloadRate);
 	else
-		printf("Peer %d connecting\n", id);
+		printf("Peer %d connecting (up: %d, down: %d)\n", p.IPAddress, p.uploadRate, p.downloadRate);
 }
 
 void printDisconnection(int id)

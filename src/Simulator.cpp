@@ -84,7 +84,7 @@ void Simulator::connectPeers()
 	// Go through the disconnected peers, connecting some at random
 	for (auto it = begin(disconnected); it != end(disconnected);) {
 		if (shouldConnect(rng)) {
-			printConnection(it->IPAddress);
+			printConnection(*it);
 			// Initialize it
 			it->simCounter = 0; // sim counter gets reset
 			// Get us some peers

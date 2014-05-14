@@ -2,11 +2,13 @@
 
 #include <cstddef> // for size_t
 
+class Peer;
+
 void printMachineOutput(bool forMachines);
 
 void printTick(int tickNum);
 
-void printConnection(int id);
+void printConnection(const Peer& p);
 
 void printDisconnection(int id);
 
