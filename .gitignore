@@ -1,5 +1,4 @@
 *.swp
 *.o
-*.d
 unit_tests*
 torrential
