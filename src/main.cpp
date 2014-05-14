@@ -2,6 +2,7 @@
 #include <tclap/CmdLine.h>
 
 #include "Simulator.hpp"
+#include "Printer.hpp"
 
 using namespace std;
 
@@ -49,6 +50,8 @@ int main(int argc, char** argv)
 	ValueArg<pair<int, int>> downloadArg("d", "download-range", "The range (in chunks) of download rates for each peer",
 	                                     false, pair<int, int>(100, 100), "min,max");
 	ValueArg<int> freeriderArg("f", "freeriders", "The number of free riders", false, 0, "number of free riders");
+	SwitchArg machineArg("m", "machine-output", "Print machine output to be more easily parsed by, say, "
+	                                            " a stats generator.");
 
 	cmd.add(peerArg);
 	cmd.add(chunkArg);
@@ -57,6 +60,7 @@ int main(int argc, char** argv)
 	cmd.add(uploadArg);
 	cmd.add(downloadArg);
 	cmd.add(freeriderArg);
+	cmd.add(machineArg);
 	cmd.parse(argc, argv);
 
 	const auto peers = peerArg.getValue();
@@ -96,12 +100,15 @@ int main(int argc, char** argv)
 	if (peers - frees < 1)
 		howAboutNo("At least one peer cannot be a free rider");
 
+	printMachineOutput(machineArg.getValue());
+
 	Simulator sim(peers, chunks, joinProb, leaveProb, upload, download, frees);
 
 	while (!sim.allDone())
 		sim.tick();
 
-	printf("Finished in %d ticks (seconds)\n", sim.getTickCount());
+	if (!machineArg.getValue())
+		printf("Finished in %d ticks (seconds)\n", sim.getTickCount());
 
 	return 0;
 }

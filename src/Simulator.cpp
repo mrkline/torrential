@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "IteratorUtils.hpp"
+#include "Printer.hpp"
 
 using namespace std;
 
@@ -62,8 +63,7 @@ Simulator::Simulator(size_t numClients, size_t numChunks, double joinProbability
  */
 void Simulator::tick()
 {
-	// printf("On tick %d:\n", tickNumber++);
-	++tickNumber;
+	printTick(++tickNumber);
 	connectPeers();
 	periodicTasks();
 	bumpSimCount();
@@ -84,7 +84,7 @@ void Simulator::connectPeers()
 	// Go through the disconnected peers, connecting some at random
 	for (auto it = begin(disconnected); it != end(disconnected);) {
 		if (shouldConnect(rng)) {
-			printf("Peer %d connecting\n", it->IPAddress);
+			printConnection(it->IPAddress);
 			// Initialize it
 			it->simCounter = 0; // sim counter gets reset
 			// Get us some peers
@@ -112,7 +112,7 @@ void Simulator::disconnectPeers()
 {
 	for (auto it = begin(connected); it != end(connected);) {
 		if (shouldDisconnect(rng)) {
-			printf("Peer %d disconnecting\n", it->IPAddress);
+			printDisconnection(it->IPAddress);
 
 			it->onDisconnect();
 

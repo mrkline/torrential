@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cassert>
 
+#include "Printer.hpp"
+
 using namespace std;
 
 const size_t Peer::topToSend;
@@ -259,7 +261,7 @@ void Peer::acceptOffers()
 		--accepting.from->uploadRemaining;
 		uploadLock.unlock();
 
-		printf("Peer %d accepting chunk %zu from peer %d\n", IPAddress, accepting.chunkIdx, accepting.from->IPAddress);
+		printTransmit(accepting.from->IPAddress, accepting.chunkIdx, IPAddress);
 
 		chunkList[accepting.chunkIdx] = true;
 
