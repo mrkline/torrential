@@ -44,7 +44,7 @@ void printTransmit(int from, size_t chunk, int to)
 	if (machineOutput)
 		printf("x %d %zu %d\n", from, chunk, to);
 	else
-		printf("Peer %d sending chunk %zu from to %d\n", from, chunk, to);
+		printf("Peer %d sending chunk %zu to %d\n", from, chunk, to);
 }
 
 void printFinished(int id, size_t totalChunks)
