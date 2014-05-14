@@ -111,7 +111,8 @@ void Simulator::connectPeers()
 void Simulator::disconnectPeers()
 {
 	for (auto it = begin(connected); it != end(connected);) {
-		if (shouldDisconnect(rng)) {
+		// Our original seeder never disconnects
+		if (it->IPAddress != 0 && shouldDisconnect(rng)) {
 			printDisconnection(it->IPAddress);
 
 			it->onDisconnect();
