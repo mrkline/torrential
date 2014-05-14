@@ -14,7 +14,7 @@ public:
 	/// A map that maps dest -> a list of pairs in the form of (source, chunk indices)
 	typedef std::unordered_map<Peer*, std::vector<std::pair<Peer*, std::vector<size_t>>>> OfferMap;
 
-	Simulator(size_t numClients, size_t numChunks);
+	Simulator(size_t numClients, size_t numChunks, double joinProbability, double leaveProbability);
 
 	void tick();
 

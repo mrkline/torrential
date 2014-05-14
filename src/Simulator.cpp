@@ -6,12 +6,12 @@
 
 using namespace std;
 
-Simulator::Simulator(size_t numClients, size_t numChunks) :
+Simulator::Simulator(size_t numClients, size_t numChunks, double joinProbability, double leaveProbability) :
 	connected(numClients),
 	disconnected(numClients),
 	rng(random_device()()), // Seed the RNG with entropy from the system via random_device
-	shouldConnect(0.02), // Connect at a 2% rate. Feel free to play with this
-	shouldDisconnect(0.8) // Disconnect at a 80% rate when done. Feel free to play with this.
+	shouldConnect(joinProbability), // Connect at a 2% rate. Feel free to play with this
+	shouldDisconnect(leaveProbability) // Disconnect at a 80% rate when done. Feel free to play with this.
 {
 	assert(numClients > 1); // Don't be stupid.
 
