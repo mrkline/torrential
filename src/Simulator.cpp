@@ -68,6 +68,7 @@ void Simulator::tick()
 	auto offers = makeOffers();
 	considerOffers(offers);
 	acceptOffers();
+	disconnectPeers();
 }
 
 bool Simulator::allDone() const
@@ -102,6 +103,24 @@ void Simulator::connectPeers()
 		}
 		else
 			++it;
+	}
+}
+
+void Simulator::disconnectPeers()
+{
+	for (auto it = begin(connected); it != end(connected);) {
+		if (shouldDisconnect(rng)) {
+			printf("Peer %d disconnecting\n", it->IPAddress);
+
+			it->onDisconnect();
+
+			disconnected.construct(std::move(*it));
+
+			it = connected.destroy(it);
+		}
+		else {
+			++it;
+		}
 	}
 }
 
