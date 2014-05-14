@@ -68,11 +68,23 @@ public:
 	 */
 	std::vector<std::pair<Peer*, std::vector<size_t>>> makeOffers() const;
 
-	void acceptOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>& offers);
+	void considerOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>& offers);
+
+	void acceptOffers();
 
 private:
 
+	struct Offer {
+		const Peer* from;
+		size_t chunkIdx;
+
+		Offer(const Peer* f, size_t idx) : from(f), chunkIdx(idx) { }
+	};
+
 	static const size_t topToSend = 5; // Send to the top 5 peers (4 + 1 optimistically unchoked)
 
+	std::vector<Offer> consideredOffers;
+
 	std::vector<std::pair<size_t, int>> getChunkPopularity() const;
+
 };

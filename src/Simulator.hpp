@@ -31,7 +31,9 @@ private:
 	 */
 	OfferMap makeOffers() const;
 
-	void acceptOffers(OfferMap& offers);
+	void considerOffers(OfferMap& offers);
+
+	void acceptOffers();
 
 	void bumpSimCount();
 

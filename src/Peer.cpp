@@ -18,7 +18,8 @@ Peer::Peer (int IP, int upload, int download, size_t numChunks) :
 	// These don't need to be in the list, but -WeffC++,
 	// which provides warnings based on Effective C++ (a famous book),
 	// recommends it.
-	interestedList()
+	interestedList(),
+	consideredOffers()
 {
 	// don't do anything, but it is cool
 }
@@ -176,7 +177,7 @@ std::vector<std::pair<size_t, int>> Peer::getChunkPopularity() const
 	return popularity;
 }
 
-void Peer::acceptOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>& offers)
+void Peer::considerOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>& offers)
 {
 	// Sanity check: We should only be getting offers for things we don't have
 #ifndef NDEBUG
@@ -186,22 +187,16 @@ void Peer::acceptOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>
 	}
 #endif
 
+	assert(consideredOffers.empty());
+
 	auto popularity = getChunkPopularity();
 
 	// Coalesce our offers into one big list
-	struct Offer {
-		const Peer* from;
-		size_t chunkIdx;
-
-		Offer(const Peer* f, size_t idx) : from(f), chunkIdx(idx) { }
-	};
-
-	vector<Offer> allOffers;
-
 	for (auto& offerSet : offers) {
 		for (size_t offer : offerSet.second)
-			allOffers.emplace_back(offerSet.first, offer);
+			consideredOffers.emplace_back(offerSet.first, offer);
 	}
+
 	// We can free up the offers vector. We're all done with it.
 	// TODO: Should we do this? Could be shooting ourselves in the foot
 	//       if we forget later. Oh well.
@@ -209,13 +204,19 @@ void Peer::acceptOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>
 	offers.shrink_to_fit();
 
 	// Lets's sort all of our offers by how popular they are
-	sort(begin(allOffers), end(allOffers), [&] (const Offer& a, const Offer& b) {
+	sort(begin(consideredOffers), end(consideredOffers), [&] (const Offer& a, const Offer& b) {
 		return popularity[a.chunkIdx].second < popularity[b.chunkIdx].second;
 	});
+}
 
-	for (int downloaded = 0; downloaded < downloadRate && downloaded < (int)allOffers.size(); ++downloaded) {
+void Peer::acceptOffers()
+{
+	if (consideredOffers.empty())
+		return;
 
-		const Offer& accepting = allOffers[downloaded]; // The offer we're accepting
+	for (int downloaded = 0; downloaded < downloadRate && downloaded < (int)consideredOffers.size(); ++downloaded) {
+
+		const Offer& accepting = consideredOffers[downloaded]; // The offer we're accepting
 
 		printf("Peer %d accepting chunk %zu from peer %d%s\n", IPAddress, accepting.chunkIdx, accepting.from->IPAddress,
 		       chunkList[accepting.chunkIdx] ? " (duplicate)" : "");
@@ -231,4 +232,7 @@ void Peer::acceptOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>
 		if (it != end(interestedList))
 			++it->second;
 	}
+
+	// We're done with the considered offers
+	consideredOffers.clear();
 }

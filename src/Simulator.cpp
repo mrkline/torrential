@@ -67,7 +67,8 @@ void Simulator::tick()
 	periodicTasks();
 	bumpSimCount();
 	auto offers = makeOffers();
-	acceptOffers(offers);
+	considerOffers(offers);
+	acceptOffers();
 }
 
 bool Simulator::allDone() const
@@ -166,16 +167,23 @@ Simulator::OfferMap Simulator::makeOffers() const
 	return ret;
 }
 
-void Simulator::acceptOffers(OfferMap& offers)
+void Simulator::considerOffers(OfferMap& offers)
 {
-	for (Peer& p : connected) {
+	parallelForEach(begin(connected), end(connected), [&offers](Peer& p) {
 		auto it = offers.find(&p);
 		if (it == end(offers))
-			continue;
+			return;
 
 		// If it's in the list, carry on.
-		p.acceptOffers(it->second);
-	}
+		p.considerOffers(it->second);
+	});
+}
+
+void Simulator::acceptOffers()
+{
+	parallelForEach(begin(connected), end(connected), [](Peer& p) {
+		p.acceptOffers();
+	});
 }
 
 void Simulator::bumpSimCount()
