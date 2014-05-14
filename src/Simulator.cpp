@@ -150,12 +150,12 @@ std::vector<Peer*> Simulator::getRandomPeers(size_t num,
 	return ret;
 }
 
-Simulator::OfferMap Simulator::makeOffers() const
+Simulator::OfferMap Simulator::makeOffers()
 {
 	mutex mapLock;
 	OfferMap ret;
 
-	parallelForEach(begin(connected), end(connected), [&ret, &mapLock](const Peer& p) {
+	parallelForEach(begin(connected), end(connected), [&ret, &mapLock](Peer& p) {
 		auto offers = p.makeOffers();
 		lock_guard<mutex> guard(mapLock);
 		for (auto& offer : offers) {

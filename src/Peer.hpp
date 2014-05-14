@@ -3,9 +3,10 @@
 
 #pragma once
 
-#include <vector>
 #include <cstddef>
+#include <mutex>
 #include <random>
+#include <vector>
 
 class Peer {
 public:
@@ -24,7 +25,7 @@ public:
 
 	Peer(int IP, int upload, int download, size_t numChunks, bool isSeed);
 
-	Peer(Peer&&) = default; // Add a move constructor
+	Peer(Peer&& o); // Add a move constructor
 
 	bool hasEverything() const { return done; }
 
@@ -66,27 +67,31 @@ public:
 	 *          The first item in the pair is the peer we are offering to,
 	 *          and the second item is a list of indices of the chunks
 	 */
-	std::vector<std::pair<Peer*, std::vector<size_t>>> makeOffers() const;
+	std::vector<std::pair<Peer*, std::vector<size_t>>> makeOffers();
 
-	void considerOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>& offers);
+	void considerOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offers);
 
 	void acceptOffers();
 
 private:
 
 	struct Offer {
-		const Peer* from;
+		Peer* from;
 		size_t chunkIdx;
 
-		Offer(const Peer* f, size_t idx) : from(f), chunkIdx(idx) { }
+		Offer(Peer* f, size_t idx) : from(f), chunkIdx(idx) { }
 	};
 
 	static const size_t topToSend = 5; // Send to the top 5 peers (4 + 1 optimistically unchoked)
 
+	bool done;
+
 	std::vector<Offer> consideredOffers;
 
-	std::vector<std::pair<size_t, int>> getChunkPopularity() const;
+	std::mutex uploadMutex;
 
-	bool done;
+	int uploadRemaining;
+
+	std::vector<std::pair<size_t, int>> getChunkPopularity() const;
 
 };

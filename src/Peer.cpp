@@ -15,16 +15,31 @@ Peer::Peer (int IP, int upload, int download, size_t numChunks, bool isSeed) :
 	uploadRate(upload),
 	downloadRate(download),
 	chunkList(numChunks),
+	interestedList(),
+	done(isSeed),
 	// These don't need to be in the list, but -WeffC++,
 	// which provides warnings based on Effective C++ (a famous book),
-	// recommends it.
-	interestedList(),
+	// recommends putting all members in the initializer list.
 	consideredOffers(),
-	done(isSeed)
+	uploadMutex(),
+	uploadRemaining()
 {
 	// If we're the seed, fill our chunkList
 	if (isSeed)
 		fill(begin(chunkList), end(chunkList), true);
+}
+
+Peer::Peer(Peer&& o) :
+	IPAddress(o.IPAddress),
+	uploadRate(o.uploadRate),
+	downloadRate(o.downloadRate),
+	chunkList(o.chunkList),
+	interestedList(move(o.interestedList)),
+	done(o.done),
+	consideredOffers(move(o.consideredOffers)),
+	uploadMutex(), // You can't copy, move, or otherwise, a mutex
+	uploadRemaining(o.uploadRemaining)
+{
 }
 
 void Peer::onDisconnect()
@@ -66,7 +81,7 @@ bool Peer::hasSomethingFor(const Peer& other) const
 	return false;
 }
 
-std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
+std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers()
 {
 	// Get out of here if we have nobody we are interested in
 	if (interestedList.empty())
@@ -95,8 +110,10 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 		return a.second < b.second;
 	});
 
+	const auto recipientCount = min(topToSend, interestedList.size());
+
 	// Set up our return value
-	vector<pair<Peer*, vector<size_t>>> ret(min(topToSend, interestedList.size()));
+	vector<pair<Peer*, vector<size_t>>> ret(recipientCount);
 
 	// Set up our peer pointers quick
 	for (size_t i = 0; i < topToSend && i < interestedList.size(); ++i) {
@@ -104,7 +121,8 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 	}
 
 	size_t peerIdx = 0;
-	for (int offered = 0; offered < uploadRate; ++offered) {
+	// Offer our entire upload bandwidth to each peer we are sending to
+	for (int offered = 0; offered < uploadRate * (int)recipientCount; ++offered) {
 
 		bool gaveSomething = false;
 
@@ -134,7 +152,7 @@ std::vector<std::pair<Peer*, std::vector<size_t>>> Peer::makeOffers() const
 			}
 
 nextPeer:
-			peerIdx = (peerIdx + 1) % std::min(topToSend, interestedList.size());
+			peerIdx = (peerIdx + 1) % recipientCount;
 
 			if (gaveSomething)
 				break;
@@ -145,6 +163,9 @@ nextPeer:
 		if (!gaveSomething)
 			break;
 	}
+
+	// Be sure to reset our number of upload slots remaining for this tick
+	uploadRemaining = uploadRate;
 
 	return ret;
 }
@@ -174,7 +195,7 @@ std::vector<std::pair<size_t, int>> Peer::getChunkPopularity() const
 	return popularity;
 }
 
-void Peer::considerOffers(std::vector<std::pair<const Peer*, std::vector<size_t>>>& offers)
+void Peer::considerOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offers)
 {
 	// Sanity check: We should only be getting offers for things we don't have
 #ifndef NDEBUG
@@ -229,6 +250,14 @@ void Peer::acceptOffers()
 		// If we have this chunk already, don't waste a download slot
 		if (chunkList[accepting.chunkIdx])
 			continue;
+
+		// See if the peer still has upload slots to use this tick
+		unique_lock<mutex> uploadLock(accepting.from->uploadMutex);
+		if (accepting.from->uploadRemaining == 0)
+			continue;
+
+		--accepting.from->uploadRemaining;
+		uploadLock.unlock();
 
 		printf("Peer %d accepting chunk %zu from peer %d\n", IPAddress, accepting.chunkIdx, accepting.from->IPAddress);
 
