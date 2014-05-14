@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "IteratorUtils.hpp"
+
 using namespace std;
 
 Simulator::Simulator(size_t numClients, size_t numChunks) :
@@ -150,14 +152,16 @@ std::vector<Peer*> Simulator::getRandomPeers(size_t num,
 
 Simulator::OfferMap Simulator::makeOffers() const
 {
+	mutex mapLock;
 	OfferMap ret;
 
-	for (const Peer& p : connected) {
+	parallelForEach(begin(connected), end(connected), [&ret, &mapLock](const Peer& p) {
 		auto offers = p.makeOffers();
+		lock_guard<mutex> guard(mapLock);
 		for (auto& offer : offers) {
 			ret[offer.first].emplace_back(&p, offer.second);
 		}
-	}
+	});
 
 	return ret;
 }
@@ -176,8 +180,9 @@ void Simulator::acceptOffers(OfferMap& offers)
 
 void Simulator::bumpSimCount()
 {
-	for (Peer& p : connected)
+	parallelForEach(begin(connected), end(connected), [](Peer& p) {
 		++p.simCounter;
+	});
 }
 
 void Simulator::periodicTasks()
