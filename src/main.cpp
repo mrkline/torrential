@@ -1,16 +1,35 @@
 #include <cstdio>
+#include <tclap/CmdLine.h>
 
 #include "Simulator.hpp"
 
 // Lee Stratman added this comment and Justin Krosschell revised it.
-int main()
+int main(int argc, char** argv)
 {
-	printf("Hello, ECE 537! Here goes nothing.\n");
+	using namespace TCLAP;
 
-	Simulator ohGod(9001, 30);
+	CmdLine cmd("Torrential - the BitTorrent simulator");
 
-	while (!ohGod.allDone())
-		ohGod.tick();
+	ValueArg<int> peerArg("p", "peers", "Peers in the simulation", true, 50, "integer");
+	ValueArg<int> chunkArg("c", "chunks", "Chunks in the complete torrent", true, 50, "integer");
+
+	cmd.add(peerArg);
+	cmd.add(chunkArg);
+	cmd.parse(argc, argv);
+
+	if (peerArg.getValue() < 2) {
+		fprintf(stderr, "You cannot have fewer than two peers\n");
+		return 1;
+	}
+	if (chunkArg.getValue() < 2) {
+		fprintf(stderr, "You cannot have fewer than two chunks\n");
+		return 1;
+	}
+
+	Simulator sim(peerArg.getValue(), chunkArg.getValue());
+
+	while (!sim.allDone())
+		sim.tick();
 
 	return 0;
 }
