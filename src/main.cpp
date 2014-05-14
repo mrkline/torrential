@@ -23,26 +23,37 @@ int main(int argc, char** argv)
 	cmd.add(leaveProbArg);
 	cmd.parse(argc, argv);
 
-	if (peerArg.getValue() < 2) {
+	auto peers = peerArg.getValue();
+	auto chunks = chunkArg.getValue();
+	auto joinProb = joinProbArg.getValue();
+	auto leaveProb = leaveProbArg.getValue();
+
+	if (peers < 2) {
 		fprintf(stderr, "You cannot have fewer than two peers.\n");
 		return 1;
 	}
-	if (chunkArg.getValue() < 2) {
+	if (chunks < 2) {
 		fprintf(stderr, "You cannot have fewer than two chunks.\n");
 		return 1;
 	}
 
-	if (joinProbArg.getValue() <= 0.0) {
+	if (joinProb <= 0.0) {
 		fprintf(stderr, "Peers must join at some positive rate.\n");
 		return 1;
 	}
 
-	if (leaveProbArg.getValue() < 0.0) {
+	if (leaveProb < 0.0) {
 		fprintf(stderr, "Peers cannot leave at a negative rate.\n");
 		return 1;
 	}
 
-	Simulator sim(peerArg.getValue(), chunkArg.getValue(), joinProbArg.getValue(), leaveProbArg.getValue());
+	if (joinProb < leaveProb) {
+		fprintf(stderr, "Peers cannot leave more ofthen than they will join;\n"
+		                "the torrent will likely never finish.\n");
+		return 1;
+	}
+
+	Simulator sim(peers, chunks, joinProb, leaveProb);
 
 	while (!sim.allDone())
 		sim.tick();
