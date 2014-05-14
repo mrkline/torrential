@@ -223,6 +223,17 @@ void Simulator::periodicTasks()
 		// already has the chunks you are offering.
 		if (p.simCounter % 120 == 0) {
 
+			// Find peers we can't help anymore
+			vector<decltype(p.interestedList)::iterator> cannotHelp;
+			for (auto it = begin(p.interestedList); it != end(p.interestedList); ++it) {
+				if (!p.hasSomethingFor(*it->first))
+					cannotHelp.emplace_back(it);
+			}
+
+			// If we can help someone, get out.
+			if (cannotHelp.size() == 0)
+				return;
+
 			// Don't get any peers we already have
 			vector<Peer*> alreadyHas;
 			transform(begin(p.interestedList), end(p.interestedList), back_inserter(alreadyHas),
@@ -231,14 +242,6 @@ void Simulator::periodicTasks()
 			});
 
 			alreadyHas.emplace_back(&p);
-
-
-			// Find peers we can't help anymore
-			vector<decltype(p.interestedList)::iterator> cannotHelp;
-			for (auto it = begin(p.interestedList); it != end(p.interestedList); ++it) {
-				if (!p.hasSomethingFor(*it->first))
-					cannotHelp.emplace_back(it);
-			}
 
 			// Remove the peers we can't help
 			for (auto it = cannotHelp.rbegin(); it != cannotHelp.rend(); ++it)
