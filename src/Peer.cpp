@@ -271,6 +271,9 @@ void Peer::acceptOffers()
 
 	done = all_of(begin(chunkList), end(chunkList), [](bool b) { return b; });
 
+	if (done)
+		printFinished(IPAddress, chunkList.size());
+
 	// We're done with the considered offers
 	consideredOffers.clear();
 }
