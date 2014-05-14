@@ -179,10 +179,12 @@ std::vector<std::pair<size_t, int>> Peer::getChunkPopularity() const
 void Peer::acceptOffers(std::vector<std::pair<Peer*, std::vector<size_t>>>& offers)
 {
 	// Sanity check: We should only be getting offers for things we don't have
+#ifndef NDEBUG
 	for (auto& offerSet : offers) {
 		for (size_t offer : offerSet.second)
 			assert(!chunkList[offer]);
 	}
+#endif
 
 	auto popularity = getChunkPopularity();
 
