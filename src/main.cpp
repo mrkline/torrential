@@ -31,5 +31,7 @@ int main(int argc, char** argv)
 	while (!sim.allDone())
 		sim.tick();
 
+	printf("Finished in %d ticks (seconds)\n", sim.getTickCount());
+
 	return 0;
 }
