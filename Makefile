@@ -5,6 +5,8 @@
 CXXFLAGS := -std=c++11 -Wall -Wextra -Weffc++ -pedantic -pthread
 LIBFLAGS :=
 
+OPTIMIZATIONS := -O2 -flto -DNDEBUG
+
 OBJS := $(filter-out src/main.o, $(patsubst %.cpp,%.o, $(wildcard src/*.cpp)))
 TESTOBJS := $(patsubst %.cpp,%.o, $(wildcard tests/*.cpp))
 
@@ -18,8 +20,11 @@ unit_tests: $(OBJS) $(TESTOBJS)
 debug: CXXFLAGS += -g
 debug: torrential
 
-release: CXXFLAGS+= -O2 -flto -DNDEBUG
+release: CXXFLAGS+= $(OPTIMIZATIONS)
 release: torrential
+
+profile: CXXFLAGS += $(OPTIMIZATIONS) -pg
+profile: torrential
 
 # link
 torrential: $(OBJS) src/main.o
