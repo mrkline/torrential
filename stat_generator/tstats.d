@@ -1,6 +1,9 @@
-import std.algorithm, std.array, std.stdio, std.process, std.datetime, std.exception, std.conv;
-import core.time;
-import core.sys.posix.unistd;
+import std.algorithm;
+import std.array;
+import std.stdio;
+import std.process;
+import std.exception;
+import std.conv;
 
 int main(string args[])
 {
