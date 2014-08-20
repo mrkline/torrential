@@ -18,7 +18,7 @@ int main(string args[])
 
 	args = args[1 .. $];
 
-	// Light up journalctl
+	// Light up torrential
 	for (int i; i < runs; ++i) {
 		writeln("\nRun ", i, ":");
 		doRun(args);
